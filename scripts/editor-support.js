@@ -5,6 +5,7 @@ import {
   decorateIcons,
   decorateSections,
   loadBlock,
+  loadScript,
   loadSections,
 } from './aem.js';
 import { decorateRichtext } from './editor-support-rte.js';
@@ -23,7 +24,11 @@ async function applyChanges(event) {
   const { content } = updates[0];
   if (!content) return false;
 
-  const parsedUpdate = new DOMParser().parseFromString(content, 'text/html');
+  // load dompurify
+  await loadScript(`${window.hlx.codeBasePath}/scripts/dompurify.min.js`);
+
+  const sanitizedContent = window.DOMPurify.sanitize(content, { USE_PROFILES: { html: true } });
+  const parsedUpdate = new DOMParser().parseFromString(sanitizedContent, 'text/html');
   const element = document.querySelector(`[data-aue-resource="${resource}"]`);
 
   if (element) {
@@ -45,9 +50,7 @@ async function applyChanges(event) {
     if (block) {
       const blockResource = block.getAttribute('data-aue-resource');
       const newBlock = parsedUpdate.querySelector(`[data-aue-resource="${blockResource}"]`);
-      if (block.dataset.aueModel === 'form') {
-        return true;
-      } else if (newBlock) {
+      if (newBlock) {
         newBlock.style.display = 'none';
         block.insertAdjacentElement('afterend', newBlock);
         decorateButtons(newBlock);
@@ -90,7 +93,7 @@ async function applyChanges(event) {
   return false;
 }
 
-async function attachEventListners(main) {
+function attachEventListners(main) {
   [
     'aue:content-patch',
     'aue:content-update',
@@ -103,8 +106,14 @@ async function attachEventListners(main) {
     const applied = await applyChanges(event);
     if (!applied) window.location.reload();
   }));
-  const module = await import('./form-editor-support.js');
-  module.attachEventListners(main);
 }
 
 attachEventListners(document.querySelector('main'));
+
+// decorate rich text
+// this has to happen after decorateMain(), and everythime decorateBlocks() is called
+decorateRichtext();
+// in cases where the block decoration is not done in one synchronous iteration we need to listen
+// for new richtext-instrumented elements. this happens for example when using experimentation.
+const observer = new MutationObserver(() => decorateRichtext());
+observer.observe(document, { attributeFilter: ['data-richtext-prop'], subtree: true });
