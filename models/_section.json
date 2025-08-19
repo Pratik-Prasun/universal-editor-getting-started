@@ -51,7 +51,9 @@
         "cards",
         "columns",
         "fragment",
-        "teaser"
+        "teaser",
+        "form",
+        "embed-adaptive-form"
       ]
     }
   ]
