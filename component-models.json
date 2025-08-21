@@ -219,44 +219,36 @@
     "id": "survey",
     "fields": [
       {
-        "component": "group",
-        "name": "backgroundGroup",
-        "label": "Background",
-        "fields": [
-          {
-            "component": "reference",
-            "name": "background_Image",
-            "label": "Background Image"
-          },
-          {
-            "component": "text",
-            "name": "background_Alt",
-            "label": "Alt Text",
-            "required": true
-          }
-        ]
+        "component": "reference",
+        "valueType": "string",
+        "name": "background",
+        "label": "Background Image",
+        "multi": false
       },
       {
-        "component": "group",
-        "name": "iconGroup",
-        "label": "Icon",
-        "fields": [
-          {
-            "component": "reference",
-            "name": "icon_Image",
-            "label": "Icon Image"
-          },
-          {
-            "component": "text",
-            "name": "icon_Alt",
-            "label": "Icon Alt Text",
-            "required": true
-          }
-        ]
+        "component": "text",
+        "valueType": "string",
+        "name": "backgroundAlt",
+        "label": "Background Image alt text",
+        "required": true
+      },
+      {
+        "component": "reference",
+        "valueType": "string",
+        "name": "iconImage",
+        "label": "Icon Image (DAM Asset)",
+        "multi": false
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "iconAlt",
+        "label": "Icon Alt Text",
+        "required": true
       },
       {
         "component": "richtext",
-        "name": "textContent_body",
+        "name": "body",
         "label": "Body (Rich Text)",
         "valueType": "string",
         "required": true
@@ -274,18 +266,11 @@
         "valueType": "string"
       },
       {
-        "component": "group",
-        "name": "footerGroup",
-        "label": "Footer",
-        "fields": [
-          {
-            "component": "richtext",
-            "name": "footerText",
-            "label": "Footer Text",
-            "valueType": "string",
-            "required": true
-          }
-        ]
+        "component": "richtext",
+        "name": "footerText",
+        "label": "Footer Text",
+        "valueType": "string",
+        "required": true
       }
     ]
   },

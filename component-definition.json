@@ -167,14 +167,9 @@
                 "template": {
                   "name": "Survey",
                   "model": "survey",
-                  "textContent_body": "<h2>Enter a title</h2><p>...and body text here!</p>",
+                  "body": "<h2>Enter a title</h2><p>...and body text here!</p>",
                   "textContent_cta": "/",
-                  "textContent_ctaText": "Click me!",
-                  "background_Image": "backgroundGroup.background_Image",
-                  "background_Alt": "backgroundGroup.background_Alt",
-                  "icon_Image": "iconGroup.icon_Image",
-                  "icon_Alt": "iconGroup.icon_Alt",
-                  "footerText": "footerGroup.footerText"
+                  "textContent_ctaText": "Click me!"
                 }
               }
             }
