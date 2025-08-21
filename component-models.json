@@ -216,6 +216,58 @@
     ]
   },
   {
+    "id": "survey",
+    "fields": [
+      {
+        "component": "reference",
+        "valueType": "string",
+        "name": "background",
+        "label": "Background Image",
+        "multi": false
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "backgroundAlt",
+        "label": "Background Image alt text",
+        "required": true
+      },
+      {
+        "component": "reference",
+        "valueType": "string",
+        "name": "icon",
+        "label": "Icon Image (DAM Asset)",
+        "multi": false
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "iconAlt",
+        "label": "Icon Alt Text",
+        "required": true
+      },
+      {
+        "component": "richtext",
+        "name": "textContent_body",
+        "label": "Body (Rich Text)",
+        "valueType": "string",
+        "required": true
+      },
+      {
+        "component": "aem-content",
+        "name": "textContent_cta",
+        "label": "CTA",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "textContent_ctaText",
+        "label": "CTA label",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
     "id": "teaser",
     "fields": [
       {
