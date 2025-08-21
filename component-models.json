@@ -235,7 +235,7 @@
       {
         "component": "reference",
         "valueType": "string",
-        "name": "iconImage",
+        "name": "icon",
         "label": "Icon Image (DAM Asset)",
         "multi": false
       },
@@ -248,7 +248,7 @@
       },
       {
         "component": "richtext",
-        "name": "body",
+        "name": "textContent_body",
         "label": "Body (Rich Text)",
         "valueType": "string",
         "required": true
@@ -264,13 +264,6 @@
         "name": "textContent_ctaText",
         "label": "CTA label",
         "valueType": "string"
-      },
-      {
-        "component": "richtext",
-        "name": "footerText",
-        "label": "Footer Text",
-        "valueType": "string",
-        "required": true
       }
     ]
   },

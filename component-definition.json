@@ -167,7 +167,7 @@
                 "template": {
                   "name": "Survey",
                   "model": "survey",
-                  "body": "<h2>Enter a title</h2><p>...and body text here!</p>",
+                  "textContent_body": "<h2>Enter a title</h2><p>...and body text here!</p>",
                   "textContent_cta": "/",
                   "textContent_ctaText": "Click me!"
                 }
