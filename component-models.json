@@ -226,13 +226,6 @@
         "multi": false
       },
       {
-        "component": "text",
-        "valueType": "string",
-        "name": "backgroundAlt",
-        "label": "Background Image alt text",
-        "required": true
-      },
-      {
         "component": "reference",
         "valueType": "string",
         "name": "icon",
