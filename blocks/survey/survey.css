@@ -5,11 +5,16 @@
   --survey-text-color: #144633;
   --survey-white: #fff;
   --survey-max-width: 1140px;
-  --footer-max-width: 864px;
+  --footer-max-width: 1120px;
   --survey-gap: 2rem;
   --survey-padding: 2rem;
   --survey-border-radius: 999px;
   --survey-transition: 0.3s ease;
+}
+
+.survey {
+  max-width: var(--survey-max-width);
+  margin: 0 auto;
 }
 
 .survey-area {
@@ -22,6 +27,7 @@
   padding: var(--survey-padding);
   background: no-repeat center / 100% auto;
   color: var(--survey-white);
+  box-sizing: border-box;
 }
 
 .survey .content {
@@ -66,12 +72,13 @@
   padding: 1rem;
   margin-top: 0;
   text-align: center;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: bold;
   line-height: 1.5;
   max-width: var(--footer-max-width);
   margin-left: auto;
   margin-right: auto;
+  box-sizing: border-box;
 }
 
 .survey .footer-content p {
