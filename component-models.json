@@ -264,6 +264,13 @@
         "name": "textContent_ctaText",
         "label": "CTA label",
         "valueType": "string"
+      },
+      {
+        "component": "richtext",
+        "name": "footerContent",
+        "label": "Footer Text",
+        "valueType": "string",
+        "required": true
       }
     ]
   },

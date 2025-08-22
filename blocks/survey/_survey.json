@@ -12,7 +12,8 @@
               "model": "survey",
               "textContent_body": "<h2>Enter a title</h2><p>...and body text here!</p>",
               "textContent_cta": "/",
-              "textContent_ctaText": "Click me!"
+              "textContent_ctaText": "Click me!",
+              "footerContent":"This is footer content"
             }
           }
         }
@@ -69,6 +70,13 @@
           "name": "textContent_ctaText",
           "label": "CTA label",
           "valueType": "string"
+        },
+        {
+          "component": "richtext",
+          "name": "footerContent",
+          "label": "Footer Text",
+          "valueType": "string",
+          "required": true
         }
       ]
     }
