@@ -66,5 +66,102 @@ export default function decorate(block) {
     }
   }
 
+  // Convert button paragraph to div
+  const buttonContainer = block.querySelector('p.button-container');
+  if (buttonContainer) {
+    const div = document.createElement('div');
+    div.className = buttonContainer.className;
+    div.innerHTML = buttonContainer.innerHTML;
+    buttonContainer.parentNode.replaceChild(div, buttonContainer);
+  }
+
+  // Function to attach Get Started button listener (defined FIRST)
+  function attachGetStartedListener(button, surveyAreaElement) {
+    button.addEventListener('click', (e) => {
+      e.preventDefault(); // Stop the link from navigating
+
+      // Store the original content (for going back later)
+      const originalContent = surveyAreaElement.innerHTML;
+
+      // Replace the survey-area content with the form
+      surveyAreaElement.innerHTML = `
+        <div class="survey-form">
+          <!-- Progress -->
+          <div class="progress">
+            <div class="progress-track">
+              <div class="progress-fill" style="width: 16.67%"></div>
+            </div>
+            <div class="progress-counter">1/6</div>
+          </div>
+          <!-- Content -->
+          <div class="content">
+            <span class="section-title">Your Treatment History</span>
+            
+            <div class="question-icon">💡</div>
+            
+            <h2 class="question">How long ago were you first diagnosed with depression?</h2>
+            <div class="options">
+              <div class="option">
+                <input type="radio" id="less-than-1" name="diagnosis-time" value="Less than 1 year">
+                <label for="less-than-1">Less than 1 year</label>
+              </div>
+              <div class="option">
+                <input type="radio" id="one-to-two" name="diagnosis-time" value="1-2 years">
+                <label for="one-to-two">1-2 years</label>
+              </div>
+              <div class="option">
+                <input type="radio" id="three-to-five" name="diagnosis-time" value="3-5 years">
+                <label for="three-to-five">3-5 years</label>
+              </div>
+              <div class="option">
+                <input type="radio" id="more-than-five" name="diagnosis-time" value="More than 5 years">
+                <label for="more-than-five">More than 5 years</label>
+              </div>
+            </div>
+            <!-- Navigation -->
+            <div class="nav">
+              <button type="button" class="btn-back">Back</button>
+              <button type="button" class="btn-next">Next</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add back button functionality
+      const backButton = surveyAreaElement.querySelector('.btn-back');
+      if (backButton) {
+        backButton.addEventListener('click', () => {
+          // Restore the original content
+          surveyAreaElement.innerHTML = originalContent;
+
+          // Re-attach the Get Started button event listener
+          const newGetStartedButton = surveyAreaElement.querySelector('.button-container .button');
+          if (newGetStartedButton) {
+            attachGetStartedListener(newGetStartedButton, surveyAreaElement);
+          }
+        });
+      }
+
+      // Add next button functionality (for testing)
+      const nextButton = surveyAreaElement.querySelector('.btn-next');
+      if (nextButton) {
+        nextButton.addEventListener('click', () => {
+          const selectedOption = surveyAreaElement.querySelector('input[name="diagnosis-time"]:checked');
+          if (selectedOption) {
+            alert(`You selected: ${selectedOption.value}`);
+          } else {
+            alert('Please select an option');
+          }
+        });
+      }
+    });
+  }
+
+  // Add button click handler to replace content with survey form (AFTER function is defined)
+  const getStartedButton = block.querySelector('.button-container .button');
+  if (getStartedButton && surveyArea) {
+    attachGetStartedListener(getStartedButton, surveyArea);
+  }
+
   if (footer) footer.classList.add('footer-content');
 }
