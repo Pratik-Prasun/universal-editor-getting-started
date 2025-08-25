@@ -1,2 +1,4 @@
 helix-importer-ui
 dompurify.min.js
+blocks/customform/*
+blocks/customform/customform.css
