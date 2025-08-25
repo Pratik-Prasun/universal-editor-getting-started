@@ -180,6 +180,21 @@
     ]
   },
   {
+    "id": "customform",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "formJson",
+        "label": "Form Json path"
+      },
+      {
+        "component": "aem-content",
+        "name": "thankyoupPage",
+        "label": "Thankyou Page path"
+      }
+    ]
+  },
+  {
     "id": "fragment",
     "fields": [
       {
