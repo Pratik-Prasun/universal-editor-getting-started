@@ -1,3 +1,24 @@
+// Simple function to fetch survey data using the exact same logic as customform.js
+async function fetchSurveyData(surveyHref) {
+  let mapping = surveyHref;
+  if (!surveyHref.endsWith('json')) {
+    const mappingresp = await fetch('/paths.json');
+    const mappingData = await mappingresp.json();
+    const mappingEntries = Object.entries(mappingData.mappings);
+    const foundMapping = mappingEntries.find(([, value]) => {
+      const [before] = value.split(':');
+      return before === surveyHref;
+    });
+    if (foundMapping) {
+      const [, after] = foundMapping[1].split(':');
+      mapping = after;
+    }
+  }
+  const resp = await fetch(mapping);
+  const json = await resp.json();
+  return json;
+}
+
 export default function decorate(block) {
   if (!block) return;
 
@@ -80,6 +101,22 @@ export default function decorate(block) {
     button.addEventListener('click', (e) => {
       e.preventDefault(); // Stop the link from navigating
 
+      // Get survey data path from the button's href
+      const surveyDataPath = button.getAttribute('href');
+
+      // Fetch survey data when button is clicked
+      if (surveyDataPath) {
+        fetchSurveyData(surveyDataPath)
+          .then((data) => {
+            // eslint-disable-next-line no-console
+            console.log('Survey data loaded:', data);
+          })
+          .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.error('Failed to load survey data:', error);
+          });
+      }
+
       // Store the original content (for going back later)
       const originalContent = surveyAreaElement.innerHTML;
 
@@ -148,9 +185,11 @@ export default function decorate(block) {
         nextButton.addEventListener('click', () => {
           const selectedOption = surveyAreaElement.querySelector('input[name="diagnosis-time"]:checked');
           if (selectedOption) {
-            alert(`You selected: ${selectedOption.value}`);
+            // eslint-disable-next-line no-console
+            console.log(`You selected: ${selectedOption.value}`);
           } else {
-            alert('Please select an option');
+            // eslint-disable-next-line no-console
+            console.log('Please select an option');
           }
         });
       }
