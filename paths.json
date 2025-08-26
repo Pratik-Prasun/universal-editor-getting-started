@@ -2,7 +2,8 @@
   "mappings": [
     "/content/pratik-eds-site/:/",
     "/content/pratik-eds-site/configuration:/.helix/config.json",
-    "/content/pratik-eds-site/metadata:/metadata.json"
+    "/content/pratik-eds-site/metadata:/metadata.json",
+    "/content/pratik-eds-site/testfrom:/forms/testfrom.json"
   ],
   "includes": [
     "/content/pratik-eds-site/"
