@@ -67,6 +67,42 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
+// Render shared survey template
+function renderSurveyTemplate(
+  progress,
+  questionsCompleted,
+  totalActualQuestions,
+  section,
+  icon,
+  contentHTML,
+) {
+  return `
+    <div class="survey-form">
+      <!-- Progress -->
+      <div class="progress">
+        <div class="progress-track">
+          <div class="progress-fill" style="width: ${progress}%"></div>
+        </div>
+        <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
+      </div>
+      <!-- Content -->
+      <div class="content">
+        <span class="section-title">${section}</span>
+        
+        <div class="question-icon">${icon}</div>
+        
+        ${contentHTML}
+        
+        <!-- Navigation -->
+        <div class="nav">
+          <button type="button" class="btn-back">Back</button>
+          <button type="button" class="btn-next">Next</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // Render different question types
 function renderQuestion(questionData, currentIndex, surveyData) {
   const {
@@ -106,36 +142,23 @@ function renderQuestion(questionData, currentIndex, surveyData) {
     `;
   }
 
-  return `
-    <div class="survey-form">
-      <!-- Progress -->
-      <div class="progress">
-        <div class="progress-track">
-          <div class="progress-fill" style="width: ${progress}%"></div>
-        </div>
-        <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
-      </div>
-      <!-- Content -->
-      <div class="content">
-        <span class="section-title">${Section}</span>
-        
-        <div class="question-icon">${Icon}</div>
-        
-        ${Title ? `<h1 class="title">${Title}</h1>` : ''}
-        <h2 class="question">${Question}</h2>
-        
-        <div class="options">
-          ${optionsHTML}
-        </div>
-        
-        <!-- Navigation -->
-        <div class="nav">
-          <button type="button" class="btn-back">Back</button>
-          <button type="button" class="btn-next">Next</button>
-        </div>
-      </div>
+  const contentHTML = `
+    ${Title ? `<h1 class="title">${Title}</h1>` : ''}
+    <h2 class="question">${Question}</h2>
+    
+    <div class="options">
+      ${optionsHTML}
     </div>
   `;
+
+  return renderSurveyTemplate(
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
+    Section,
+    Icon,
+    contentHTML,
+  );
 }
 
 function renderFactContent(questionData, currentIndex, surveyData) {
@@ -148,32 +171,19 @@ function renderFactContent(questionData, currentIndex, surveyData) {
     surveyData,
   );
 
-  return `
-    <div class="survey-form">
-      <!-- Progress -->
-      <div class="progress">
-        <div class="progress-track">
-          <div class="progress-fill" style="width: ${progress}%"></div>
-        </div>
-        <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
-      </div>
-      <!-- Content -->
-      <div class="content">
-        <span class="section-title">${Section}</span>
-        
-        <div class="question-icon">${Icon}</div>
-        
-        <h1 class="title">${Title}</h1>
-        <p class="fact-content">${Question}</p>
-        
-        <!-- Navigation -->
-        <div class="nav">
-          <button type="button" class="btn-back">Back</button>
-          <button type="button" class="btn-next">Next</button>
-        </div>
-      </div>
-    </div>
+  const contentHTML = `
+    <h1 class="title">${Title}</h1>
+    <p class="fact-content">${Question}</p>
   `;
+
+  return renderSurveyTemplate(
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
+    Section,
+    Icon,
+    contentHTML,
+  );
 }
 
 export default function decorate(block) {
