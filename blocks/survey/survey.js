@@ -24,29 +24,21 @@ async function fetchSurveyData(surveyHref) {
 
 // Parse survey data from JSON response
 function parseSurveyData(surveyResponse) {
-  // Handle JSON response with data array
-  let questions = [];
+  // API consistently returns {data: [...], total, offset, limit} format
+  const questions = surveyResponse.data || [];
 
-  if (surveyResponse.data && Array.isArray(surveyResponse.data)) {
-    questions = surveyResponse.data.map((item) => {
-      // Parse options into array if it's a comma-separated string
-      if (item.Options && typeof item.Options === 'string') {
-        item.Options = item.Options.split(',').map((opt) => opt.trim());
-      }
-      return item;
-    });
-  } else if (Array.isArray(surveyResponse)) {
-    // Handle direct array response
-    questions = surveyResponse.map((item) => {
-      if (item.Options && typeof item.Options === 'string') {
-        item.Options = item.Options.split(',').map((opt) => opt.trim());
-      }
-      return item;
-    });
-  }
+  // However, Options field may sometimes be converted to comma-separated strings
+  // during Excel/AEM processing, so we need to normalize it back to arrays
+  const normalizedQuestions = questions.map((item) => {
+    // Ensure Options is always an array
+    if (item.Options && typeof item.Options === 'string') {
+      item.Options = item.Options.split(',').map((opt) => opt.trim());
+    }
+    return item;
+  });
 
   // Sort by Order column
-  return questions.sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
+  return normalizedQuestions.sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
 }
 
 // Calculate progress for survey questions
