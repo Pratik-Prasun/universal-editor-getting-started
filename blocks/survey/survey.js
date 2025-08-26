@@ -49,16 +49,8 @@ function parseSurveyData(surveyResponse) {
   return questions.sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
 }
 
-// Render different question types
-function renderQuestion(questionData, currentIndex, surveyData) {
-  const {
-    ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
-  } = questionData;
-
-  if (ContentType === 'fact') {
-    return renderFactContent(questionData, currentIndex, surveyData);
-  }
-
+// Calculate progress for survey questions
+function calculateProgress(currentIndex, surveyData) {
   // Calculate progress based on CountsAsQuestion
   const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
   const totalActualQuestions = actualQuestions.length;
@@ -72,6 +64,23 @@ function renderQuestion(questionData, currentIndex, surveyData) {
   }
 
   const progress = (questionsCompleted / totalActualQuestions) * 100;
+  return { progress, questionsCompleted, totalActualQuestions };
+}
+
+// Render different question types
+function renderQuestion(questionData, currentIndex, surveyData) {
+  const {
+    ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
+  } = questionData;
+
+  if (ContentType === 'fact') {
+    return renderFactContent(questionData, currentIndex, surveyData);
+  }
+
+  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
+    currentIndex,
+    surveyData,
+  );
 
   let optionsHTML = '';
 
@@ -134,19 +143,10 @@ function renderFactContent(questionData, currentIndex, surveyData) {
     Section, Icon, Title, Question,
   } = questionData;
 
-  // Calculate progress based on CountsAsQuestion
-  const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
-  const totalActualQuestions = actualQuestions.length;
-
-  // Count how many actual questions have been completed up to current index
-  let questionsCompleted = 0;
-  for (let i = 0; i <= currentIndex; i += 1) {
-    if (surveyData[i].CountsAsQuestion === 'TRUE') {
-      questionsCompleted += 1;
-    }
-  }
-
-  const progress = (questionsCompleted / totalActualQuestions) * 100;
+  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
+    currentIndex,
+    surveyData,
+  );
 
   return `
     <div class="survey-form">
