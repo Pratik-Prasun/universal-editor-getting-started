@@ -55,8 +55,9 @@
         {
           "component": "aem-content",
           "name": "textContent_cta",
-          "label": "CTA",
-          "valueType": "string"
+          "label": "Survey Data JSON Path",
+          "valueType": "string",
+          "required": true
         },
         {
           "component": "text",
