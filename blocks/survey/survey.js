@@ -50,18 +50,28 @@ function parseSurveyData(surveyResponse) {
 }
 
 // Render different question types
-function renderQuestion(questionData, currentIndex, totalQuestions) {
+function renderQuestion(questionData, currentIndex, surveyData) {
   const {
     ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
   } = questionData;
 
   if (ContentType === 'fact') {
-    // eslint-disable-next-line no-use-before-define
-    return renderFactContent(questionData, currentIndex, totalQuestions);
+    return renderFactContent(questionData, currentIndex, surveyData);
   }
 
-  const progress = ((currentIndex + 1) / totalQuestions) * 100;
-  const questionNumber = currentIndex + 1;
+  // Calculate progress based on CountsAsQuestion
+  const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
+  const totalActualQuestions = actualQuestions.length;
+
+  // Count how many actual questions have been completed up to current index
+  let questionsCompleted = 0;
+  for (let i = 0; i <= currentIndex; i += 1) {
+    if (surveyData[i].CountsAsQuestion === 'TRUE') {
+      questionsCompleted += 1;
+    }
+  }
+
+  const progress = (questionsCompleted / totalActualQuestions) * 100;
 
   let optionsHTML = '';
 
@@ -94,7 +104,7 @@ function renderQuestion(questionData, currentIndex, totalQuestions) {
         <div class="progress-track">
           <div class="progress-fill" style="width: ${progress}%"></div>
         </div>
-        <div class="progress-counter">${questionNumber}/${totalQuestions}</div>
+        <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
       </div>
       <!-- Content -->
       <div class="content">
@@ -119,12 +129,24 @@ function renderQuestion(questionData, currentIndex, totalQuestions) {
   `;
 }
 
-function renderFactContent(questionData, currentIndex, totalQuestions) {
+function renderFactContent(questionData, currentIndex, surveyData) {
   const {
     Section, Icon, Title, Question,
   } = questionData;
-  const progress = ((currentIndex + 1) / totalQuestions) * 100;
-  const questionNumber = currentIndex + 1;
+
+  // Calculate progress based on CountsAsQuestion
+  const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
+  const totalActualQuestions = actualQuestions.length;
+
+  // Count how many actual questions have been completed up to current index
+  let questionsCompleted = 0;
+  for (let i = 0; i <= currentIndex; i += 1) {
+    if (surveyData[i].CountsAsQuestion === 'TRUE') {
+      questionsCompleted += 1;
+    }
+  }
+
+  const progress = (questionsCompleted / totalActualQuestions) * 100;
 
   return `
     <div class="survey-form">
@@ -133,7 +155,7 @@ function renderFactContent(questionData, currentIndex, totalQuestions) {
         <div class="progress-track">
           <div class="progress-fill" style="width: ${progress}%"></div>
         </div>
-        <div class="progress-counter">${questionNumber}/${totalQuestions}</div>
+        <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
       </div>
       <!-- Content -->
       <div class="content">
@@ -241,9 +263,8 @@ export default function decorate(block) {
   function showQuestion(index) {
     currentQuestionIndex = index;
     const questionData = surveyData[index];
-    const totalQuestions = surveyData.length;
 
-    const questionHTML = renderQuestion(questionData, index, totalQuestions);
+    const questionHTML = renderQuestion(questionData, index, surveyData);
     surveyArea.innerHTML = questionHTML;
 
     // Attach event listeners
