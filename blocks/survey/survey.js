@@ -21,6 +21,17 @@ function hasValidAnswer(question, answers) {
   return answers[question.ContentId] != null;
 }
 
+// Helper function to detect related questions (like q5a, q5b)
+function areQuestionsRelated(question1, question2) {
+  if (!question1 || !question2) return false;
+
+  // Extract base ID by removing the letter suffix (a, b, c, etc.)
+  const baseId1 = question1.ContentId.replace(/[a-z]$/, '');
+  const baseId2 = question2.ContentId.replace(/[a-z]$/, '');
+
+  return baseId1 === baseId2 && baseId1 !== question1.ContentId;
+}
+
 // Simple function to fetch survey data using the exact same logic as customform.js
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
@@ -150,6 +161,10 @@ function renderQuestion(questionData, currentIndex, surveyData) {
     return renderFactContent(questionData, currentIndex, surveyData);
   }
 
+  // Check if this question has a related follow-up question
+  const nextQuestion = surveyData[currentIndex + 1];
+  const hasRelatedQuestion = areQuestionsRelated(questionData, nextQuestion);
+
   const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
     currentIndex,
     surveyData,
@@ -166,22 +181,52 @@ function renderQuestion(questionData, currentIndex, surveyData) {
       </div>
     `).join('');
   } else if (OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
-    optionsHTML = `
-      <div class="slider-container">
-        <div class="slider-labels">
-          ${Options.map((option) => `<span>${option}</span>`).join('')}
+    if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      // Render two related sliders
+      optionsHTML = `
+        <div class="slider-container">
+          <h3 class="slider-question">${Question}</h3>
+          <div class="slider-labels">
+            ${Options.map((option) => `<span>${option}</span>`).join('')}
+          </div>
+          <input type="range" id="${ContentId}" name="${ContentId}" 
+                 min="0" max="${Options.length - 1}" value="0" 
+                 class="slider" data-options='${JSON.stringify(Options)}'>
+          <div class="slider-value">${Options[0]}</div>
         </div>
-        <input type="range" id="${ContentId}" name="${ContentId}" 
-               min="0" max="${Options.length - 1}" value="0" 
-               class="slider" data-options='${JSON.stringify(Options)}'>
-        <div class="slider-value">${Options[0]}</div>
-      </div>
-    `;
+        
+        <div class="slider-container">
+          <h3 class="slider-question">${nextQuestion.Question}</h3>
+          <div class="slider-labels">
+            ${nextQuestion.Options.map((option) => `<span>${option}</span>`).join('')}
+          </div>
+          <input type="range" id="${nextQuestion.ContentId}" name="${nextQuestion.ContentId}" 
+                 min="0" max="${nextQuestion.Options.length - 1}" value="0" 
+                 class="slider" data-options='${JSON.stringify(nextQuestion.Options)}'>
+          <div class="slider-value">${nextQuestion.Options[0]}</div>
+        </div>
+      `;
+    } else {
+      // Single slider
+      optionsHTML = `
+        <div class="slider-container">
+          <div class="slider-labels">
+            ${Options.map((option) => `<span>${option}</span>`).join('')}
+          </div>
+          <input type="range" id="${ContentId}" name="${ContentId}" 
+                 min="0" max="${Options.length - 1}" value="0" 
+                 class="slider" data-options='${JSON.stringify(Options)}'>
+          <div class="slider-value">${Options[0]}</div>
+        </div>
+      `;
+    }
   }
 
   const contentHTML = `
     ${Title ? `<h1 class="title">${Title}</h1>` : ''}
-    <h2 class="question">${Question}</h2>
+    ${hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE
+    ? ''
+    : `<h2 class="question">${Question}</h2>`}
     
     <div class="options">
       ${optionsHTML}
@@ -348,26 +393,50 @@ export default function decorate(block) {
   // Attach input event listeners
   function attachInputListeners() {
     const currentQuestion = surveyData[currentQuestionIndex];
+    const nextQuestion = surveyData[currentQuestionIndex + 1];
+    const hasRelatedQuestion = areQuestionsRelated(currentQuestion, nextQuestion);
 
     if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
-      // Cache DOM queries
-      const slider = surveyArea.querySelector('.slider');
-      const valueDisplay = surveyArea.querySelector('.slider-value');
+      if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+        // Handle both sliders for related questions
+        const sliders = surveyArea.querySelectorAll('.slider');
+        sliders.forEach((slider, index) => {
+          const valueDisplay = slider.parentElement.querySelector('.slider-value');
+          const questionData = index === 0 ? currentQuestion : nextQuestion;
+          const options = JSON.parse(slider.dataset.options);
 
-      if (slider && valueDisplay) {
-        const options = JSON.parse(slider.dataset.options);
+          slider.addEventListener('input', (e) => {
+            handleSliderInput(e, options, questionData.ContentId, valueDisplay);
+          });
 
-        // Use extracted handler function
-        slider.addEventListener('input', (e) => {
-          handleSliderInput(e, options, currentQuestion.ContentId, valueDisplay);
+          // Set initial value if answer exists
+          if (surveyAnswers[questionData.ContentId]) {
+            const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
+            if (answerIndex !== -1) {
+              slider.value = answerIndex;
+              valueDisplay.textContent = options[answerIndex];
+            }
+          }
         });
+      } else {
+        // Single slider logic (existing code)
+        const slider = surveyArea.querySelector('.slider');
+        const valueDisplay = surveyArea.querySelector('.slider-value');
 
-        // Set initial value if answer exists
-        if (surveyAnswers[currentQuestion.ContentId]) {
-          const answerIndex = options.indexOf(surveyAnswers[currentQuestion.ContentId]);
-          if (answerIndex !== -1) {
-            slider.value = answerIndex;
-            valueDisplay.textContent = options[answerIndex];
+        if (slider && valueDisplay) {
+          const options = JSON.parse(slider.dataset.options);
+
+          slider.addEventListener('input', (e) => {
+            handleSliderInput(e, options, currentQuestion.ContentId, valueDisplay);
+          });
+
+          // Set initial value if answer exists
+          if (surveyAnswers[currentQuestion.ContentId]) {
+            const answerIndex = options.indexOf(surveyAnswers[currentQuestion.ContentId]);
+            if (answerIndex !== -1) {
+              slider.value = answerIndex;
+              valueDisplay.textContent = options[answerIndex];
+            }
           }
         }
       }
@@ -398,11 +467,21 @@ export default function decorate(block) {
   // Handle next button click
   function handleNextClick() {
     const currentQuestion = surveyData[currentQuestionIndex];
+    const nextQuestion = surveyData[currentQuestionIndex + 1];
+    const hasRelatedQuestion = areQuestionsRelated(currentQuestion, nextQuestion);
 
-    // Validate mandatory fields using helper functions
+    // Validate mandatory fields for current question
     if (isAnswerRequired(currentQuestion) && !hasValidAnswer(currentQuestion, surveyAnswers)) {
       alert('Please select an option before continuing.');
       return;
+    }
+
+    // If there's a related question displayed, validate it too
+    if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      if (isAnswerRequired(nextQuestion) && !hasValidAnswer(nextQuestion, surveyAnswers)) {
+        alert('Please select an option for both questions before continuing.');
+        return;
+      }
     }
 
     // Emit custom event instead of direct function call
@@ -433,14 +512,38 @@ export default function decorate(block) {
         surveyArea.innerHTML = originalContent;
         attachGetStartedListener();
       } else {
-        showQuestion(currentQuestionIndex - 1);
+        let prevIndex = currentQuestionIndex - 1;
+
+        // Check if the previous question was part of a related pair that we skipped
+        if (prevIndex > 0) {
+          const prevPrevQuestion = surveyData[prevIndex - 1];
+          const prevQuestion = surveyData[prevIndex];
+
+          // If previous question was the second of a related pair, go back to the first one
+          if (areQuestionsRelated(prevPrevQuestion, prevQuestion)) {
+            prevIndex -= 1;
+          }
+        }
+
+        showQuestion(prevIndex);
       }
     });
 
     // Handle next/forward navigation
     surveyArea.addEventListener('survey:next', () => {
-      if (currentQuestionIndex < surveyData.length - 1) {
-        showQuestion(currentQuestionIndex + 1);
+      const currentQuestion = surveyData[currentQuestionIndex];
+      const nextQuestion = surveyData[currentQuestionIndex + 1];
+      const hasRelatedQuestion = areQuestionsRelated(currentQuestion, nextQuestion);
+
+      let nextIndex = currentQuestionIndex + 1;
+
+      // If current question has a related follow-up, skip it since it was already displayed
+      if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+        nextIndex = currentQuestionIndex + 2;
+      }
+
+      if (nextIndex < surveyData.length) {
+        showQuestion(nextIndex);
       } else {
         // Survey complete
         console.log('Survey completed:', surveyAnswers);
