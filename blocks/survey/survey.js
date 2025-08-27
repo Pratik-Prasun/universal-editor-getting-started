@@ -436,7 +436,8 @@ export default function decorate(block) {
 
     const questionElement = createQuestion(questionData, index, surveyData);
 
-    // Use consistent content replacement
+    // Preserve the original container structure and styling
+    surveyArea.className = 'survey-area';
     replaceContent(surveyArea, questionElement);
 
     // Attach event listeners

@@ -66,6 +66,181 @@
   height: auto;
 }
 
+/* Options Styling */
+.survey .options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+.survey .option {
+  position: relative;
+  display: inline-block;
+}
+
+.survey .option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.survey .option label {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  border: 2px solid var(--survey-white);
+  border-radius: var(--survey-border-radius);
+  color: var(--survey-white);
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--survey-transition);
+  text-align: center;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.survey .option label:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.survey .option input[type="radio"]:checked + label {
+  background-color: var(--survey-text-color);
+  border-color: var(--survey-text-color);
+  color: var(--survey-white);
+  box-shadow: 0 4px 12px rgba(20, 70, 51, 0.3);
+}
+
+/* Progress Bar Styling */
+.survey .progress {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+}
+
+/* Survey Form Container */
+.survey .survey-form {
+  grid-column: 1 / -1; /* Span both columns when inside survey-area */
+  max-width: none; /* Remove max-width constraint when inside grid */
+  margin: 0;
+  padding: 0;
+  background: none; /* Background is handled by survey-area */
+  color: var(--survey-white);
+  box-sizing: border-box;
+}
+
+.survey .survey-form .content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.survey .survey-form .title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.survey .survey-form .question {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--survey-text-color);
+}
+
+.survey .survey-form .section-title {
+  color: var(--survey-text-color);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.survey .survey-form .question-icon {
+  width: 80px;
+  height: 80px;
+  background-color: var(--survey-primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 1rem 0;
+}
+
+/* Navigation Styling */
+.survey .nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3rem;
+  gap: 1rem;
+}
+
+.survey .btn-back {
+  background: transparent;
+  border: none;
+  color: var(--survey-text-color);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.75rem 0;
+  text-decoration: underline;
+  transition: opacity var(--survey-transition);
+}
+
+.survey .btn-back:hover {
+  opacity: 0.8;
+}
+
+.survey .btn-next {
+  background-color: var(--survey-primary-color);
+  color: var(--survey-text-color);
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: var(--survey-border-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--survey-transition);
+}
+
+.survey .btn-next:hover {
+  background-color: var(--survey-primary-hover);
+}
+
+.survey .progress-track {
+  flex: 1;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.survey .progress-fill {
+  height: 100%;
+  background-color: var(--survey-primary-color);
+  border-radius: 4px;
+  transition: width var(--survey-transition);
+  min-width: 0;
+}
+
+.survey .progress-counter {
+  color: var(--survey-white);
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
 /* Footer styling */
 .survey .footer-content {
   color: #000;
