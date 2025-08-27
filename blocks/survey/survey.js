@@ -52,7 +52,7 @@ function areQuestionsRelated(question1, question2) {
 // Create DOM elements safely without innerHTML to prevent XSS
 function createElement(tag, className, textContent, attributes = {}) {
   const element = document.createElement(tag);
-  if (className) element.className = className;
+  if (className) element.classList.add(...className.split(' '));
   if (textContent) element.textContent = textContent;
 
   Object.entries(attributes).forEach(([key, value]) => {
@@ -64,6 +64,21 @@ function createElement(tag, className, textContent, attributes = {}) {
   });
 
   return element;
+}
+
+// Safely replace all content in a container
+function replaceContent(container, newContent) {
+  // Clear existing content safely
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+
+  // Add new content
+  if (typeof newContent === 'string') {
+    container.textContent = newContent;
+  } else if (newContent) {
+    container.appendChild(newContent);
+  }
 }
 
 // Create radio button options for multiple choice questions
@@ -343,7 +358,7 @@ export default function decorate(block) {
 
   // create a survey-area wrapper if missing
   if (!surveyArea && (logo || content)) {
-    surveyArea = document.createElement('div');
+    surveyArea = createElement('div');
     block.prepend(surveyArea);
   }
 
@@ -396,12 +411,15 @@ export default function decorate(block) {
     }
   }
 
-  // Convert button paragraph to div
+  // Convert button paragraph to div using consistent approach
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
-    const div = document.createElement('div');
-    div.className = buttonContainer.className;
-    div.innerHTML = buttonContainer.innerHTML;
+    const div = createElement('div');
+    div.className = buttonContainer.className; // Keep existing classes intact
+    // Copy all child nodes safely
+    while (buttonContainer.firstChild) {
+      div.appendChild(buttonContainer.firstChild);
+    }
     buttonContainer.parentNode.replaceChild(div, buttonContainer);
   }
 
@@ -418,11 +436,8 @@ export default function decorate(block) {
 
     const questionElement = createQuestion(questionData, index, surveyData);
 
-    // Clear and replace content safely
-    while (surveyArea.firstChild) {
-      surveyArea.removeChild(surveyArea.firstChild);
-    }
-    surveyArea.appendChild(questionElement);
+    // Use consistent content replacement
+    replaceContent(surveyArea, questionElement);
 
     // Attach event listeners
     // eslint-disable-next-line no-use-before-define
@@ -598,10 +613,8 @@ export default function decorate(block) {
     // Handle back navigation
     surveyArea.addEventListener('survey:back', () => {
       if (currentQuestionIndex === 0) {
-        // Go back to original content safely
-        while (surveyArea.firstChild) {
-          surveyArea.removeChild(surveyArea.firstChild);
-        }
+        // Go back to original content (trusted content, can use innerHTML)
+        replaceContent(surveyArea);
         surveyArea.innerHTML = originalContent;
         attachGetStartedListener();
       } else {
