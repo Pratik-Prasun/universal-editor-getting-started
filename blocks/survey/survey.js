@@ -296,37 +296,53 @@ export default function decorate(block) {
     attachInputListeners();
   }
 
+  // Handle Get Started button click
+  async function handleGetStartedClick(e) {
+    e.preventDefault();
+
+    const surveyDataPath = e.target.getAttribute('href');
+
+    try {
+      // Store original content
+      originalContent = surveyArea.innerHTML;
+
+      // Fetch and parse survey data
+      const data = await fetchSurveyData(surveyDataPath);
+      console.log('Survey data loaded:', data);
+
+      // Assuming the data is CSV format, parse it
+      surveyData = parseSurveyData(data);
+      console.log('Parsed survey questions:', surveyData);
+
+      // Start survey
+      currentQuestionIndex = 0;
+      surveyAnswers = {};
+      showQuestion(0);
+    } catch (error) {
+      console.error('Failed to load survey data:', error);
+      alert('Failed to load survey. Please try again.');
+    }
+  }
+
   // Function to attach Get Started button listener
   function attachGetStartedListener() {
+    // Cache DOM query
     const getStartedButton = surveyArea.querySelector('.button-container .button');
     if (getStartedButton) {
-      getStartedButton.addEventListener('click', async (e) => {
-        e.preventDefault();
-
-        const surveyDataPath = getStartedButton.getAttribute('href');
-
-        try {
-          // Store original content
-          originalContent = surveyArea.innerHTML;
-
-          // Fetch and parse survey data
-          const data = await fetchSurveyData(surveyDataPath);
-          console.log('Survey data loaded:', data);
-
-          // Assuming the data is CSV format, parse it
-          surveyData = parseSurveyData(data);
-          console.log('Parsed survey questions:', surveyData);
-
-          // Start survey
-          currentQuestionIndex = 0;
-          surveyAnswers = {};
-          showQuestion(0);
-        } catch (error) {
-          console.error('Failed to load survey data:', error);
-          alert('Failed to load survey. Please try again.');
-        }
-      });
+      getStartedButton.addEventListener('click', handleGetStartedClick);
     }
+  }
+
+  // Handle slider input change
+  function handleSliderInput(e, options, questionId, valueDisplay) {
+    const selectedIndex = parseInt(e.target.value, 10);
+    valueDisplay.textContent = options[selectedIndex];
+    surveyAnswers[questionId] = options[selectedIndex];
+  }
+
+  // Handle radio button change
+  function handleRadioChange(e, questionId) {
+    surveyAnswers[questionId] = e.target.value;
   }
 
   // Attach input event listeners
@@ -334,16 +350,16 @@ export default function decorate(block) {
     const currentQuestion = surveyData[currentQuestionIndex];
 
     if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      // Cache DOM queries
       const slider = surveyArea.querySelector('.slider');
       const valueDisplay = surveyArea.querySelector('.slider-value');
 
       if (slider && valueDisplay) {
         const options = JSON.parse(slider.dataset.options);
 
+        // Use extracted handler function
         slider.addEventListener('input', (e) => {
-          const selectedIndex = parseInt(e.target.value, 10);
-          valueDisplay.textContent = options[selectedIndex];
-          surveyAnswers[currentQuestion.ContentId] = options[selectedIndex];
+          handleSliderInput(e, options, currentQuestion.ContentId, valueDisplay);
         });
 
         // Set initial value if answer exists
@@ -356,11 +372,13 @@ export default function decorate(block) {
         }
       }
     } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+      // Cache DOM query
       const radioButtons = surveyArea.querySelectorAll(`input[name="${currentQuestion.ContentId}"]`);
 
       radioButtons.forEach((radio) => {
+        // Use extracted handler function
         radio.addEventListener('change', (e) => {
-          surveyAnswers[currentQuestion.ContentId] = e.target.value;
+          handleRadioChange(e, currentQuestion.ContentId);
         });
 
         // Restore previous answer
@@ -371,31 +389,38 @@ export default function decorate(block) {
     }
   }
 
+  // Handle back button click
+  function handleBackClick() {
+    // Emit custom event instead of direct function call
+    surveyArea.dispatchEvent(new CustomEvent('survey:back'));
+  }
+
+  // Handle next button click
+  function handleNextClick() {
+    const currentQuestion = surveyData[currentQuestionIndex];
+
+    // Validate mandatory fields using helper functions
+    if (isAnswerRequired(currentQuestion) && !hasValidAnswer(currentQuestion, surveyAnswers)) {
+      alert('Please select an option before continuing.');
+      return;
+    }
+
+    // Emit custom event instead of direct function call
+    surveyArea.dispatchEvent(new CustomEvent('survey:next'));
+  }
+
   // Attach navigation event listeners
   function attachNavigationListeners() {
+    // Cache DOM queries
     const backButton = surveyArea.querySelector('.btn-back');
     const nextButton = surveyArea.querySelector('.btn-next');
 
     if (backButton) {
-      backButton.addEventListener('click', () => {
-        // Emit custom event instead of direct function call
-        surveyArea.dispatchEvent(new CustomEvent('survey:back'));
-      });
+      backButton.addEventListener('click', handleBackClick);
     }
 
     if (nextButton) {
-      nextButton.addEventListener('click', () => {
-        const currentQuestion = surveyData[currentQuestionIndex];
-
-        // Validate mandatory fields using helper functions
-        if (isAnswerRequired(currentQuestion) && !hasValidAnswer(currentQuestion, surveyAnswers)) {
-          alert('Please select an option before continuing.');
-          return;
-        }
-
-        // Emit custom event instead of direct function call
-        surveyArea.dispatchEvent(new CustomEvent('survey:next'));
-      });
+      nextButton.addEventListener('click', handleNextClick);
     }
   }
 
