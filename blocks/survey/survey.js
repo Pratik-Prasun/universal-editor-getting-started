@@ -1,6 +1,26 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
 
+// Survey constants
+const SURVEY_CONSTANTS = {
+  MANDATORY_TRUE: 'TRUE',
+  QUESTION_TYPE: 'question',
+  FACT_TYPE: 'fact',
+  SLIDER_TYPE: 'slider',
+  RADIO_TYPE: 'radio',
+  JSON_EXTENSION: 'json',
+};
+
+// Validation helper function
+function isAnswerRequired(question) {
+  return question.Mandatory === SURVEY_CONSTANTS.MANDATORY_TRUE
+    && question.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE;
+}
+
+function hasValidAnswer(question, answers) {
+  return answers[question.ContentId] != null;
+}
+
 // Simple function to fetch survey data using the exact same logic as customform.js
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
@@ -126,7 +146,7 @@ function renderQuestion(questionData, currentIndex, surveyData) {
     ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
   } = questionData;
 
-  if (ContentType === 'fact') {
+  if (ContentType === SURVEY_CONSTANTS.FACT_TYPE) {
     return renderFactContent(questionData, currentIndex, surveyData);
   }
 
@@ -137,7 +157,7 @@ function renderQuestion(questionData, currentIndex, surveyData) {
 
   let optionsHTML = '';
 
-  if (OptionType === 'radio') {
+  if (OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
     optionsHTML = Options.map((option) => `
       <div class="option">
         <input type="radio" id="${ContentId}-${option.replace(/\s+/g, '-').toLowerCase()}" 
@@ -145,7 +165,7 @@ function renderQuestion(questionData, currentIndex, surveyData) {
         <label for="${ContentId}-${option.replace(/\s+/g, '-').toLowerCase()}">${option}</label>
       </div>
     `).join('');
-  } else if (OptionType === 'slider') {
+  } else if (OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
     optionsHTML = `
       <div class="slider-container">
         <div class="slider-labels">
@@ -313,7 +333,7 @@ export default function decorate(block) {
   function attachInputListeners() {
     const currentQuestion = surveyData[currentQuestionIndex];
 
-    if (currentQuestion.OptionType === 'slider') {
+    if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
       const slider = surveyArea.querySelector('.slider');
       const valueDisplay = surveyArea.querySelector('.slider-value');
 
@@ -335,7 +355,7 @@ export default function decorate(block) {
           }
         }
       }
-    } else if (currentQuestion.OptionType === 'radio') {
+    } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
       const radioButtons = surveyArea.querySelectorAll(`input[name="${currentQuestion.ContentId}"]`);
 
       radioButtons.forEach((radio) => {
@@ -358,13 +378,8 @@ export default function decorate(block) {
 
     if (backButton) {
       backButton.addEventListener('click', () => {
-        if (currentQuestionIndex === 0) {
-          // Go back to original content
-          surveyArea.innerHTML = originalContent;
-          attachGetStartedListener();
-        } else {
-          showQuestion(currentQuestionIndex - 1);
-        }
+        // Emit custom event instead of direct function call
+        surveyArea.dispatchEvent(new CustomEvent('survey:back'));
       });
     }
 
@@ -372,23 +387,41 @@ export default function decorate(block) {
       nextButton.addEventListener('click', () => {
         const currentQuestion = surveyData[currentQuestionIndex];
 
-        // Validate mandatory fields
-        if (currentQuestion.Mandatory === 'TRUE' && currentQuestion.ContentType === 'question') {
-          if (!surveyAnswers[currentQuestion.ContentId]) {
-            alert('Please select an option before continuing.');
-            return;
-          }
+        // Validate mandatory fields using helper functions
+        if (isAnswerRequired(currentQuestion) && !hasValidAnswer(currentQuestion, surveyAnswers)) {
+          alert('Please select an option before continuing.');
+          return;
         }
 
-        if (currentQuestionIndex < surveyData.length - 1) {
-          showQuestion(currentQuestionIndex + 1);
-        } else {
-          // Survey complete
-          console.log('Survey completed:', surveyAnswers);
-          alert('Survey completed! Check console for answers.');
-        }
+        // Emit custom event instead of direct function call
+        surveyArea.dispatchEvent(new CustomEvent('survey:next'));
       });
     }
+  }
+
+  // Survey navigation event handlers
+  if (surveyArea) {
+    // Handle back navigation
+    surveyArea.addEventListener('survey:back', () => {
+      if (currentQuestionIndex === 0) {
+        // Go back to original content
+        surveyArea.innerHTML = originalContent;
+        attachGetStartedListener();
+      } else {
+        showQuestion(currentQuestionIndex - 1);
+      }
+    });
+
+    // Handle next/forward navigation
+    surveyArea.addEventListener('survey:next', () => {
+      if (currentQuestionIndex < surveyData.length - 1) {
+        showQuestion(currentQuestionIndex + 1);
+      } else {
+        // Survey complete
+        console.log('Survey completed:', surveyAnswers);
+        alert('Survey completed! Check console for answers.');
+      }
+    });
   }
 
   // Initialize Get Started button
