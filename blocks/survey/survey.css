@@ -10,12 +10,56 @@
   --survey-padding: 2rem;
   --survey-border-radius: 999px;
   --survey-transition: 0.3s ease;
-  --survey-form-content:#fafafa;
+  --survey-form-content: #fafafa;
+  
+  /* Additional variables to reduce repetition */
+  --survey-button-padding: 0.75rem;
+  --survey-option-padding: 0.75rem 2rem;
+  --survey-font-weight-medium: 500;
+  --survey-font-weight-semibold: 600;
+  --survey-font-weight-bold: bold;
+  --survey-shadow-color: rgba(20, 70, 51, 0.3);
+  --survey-white-transparent: rgba(255, 255, 255, 0.1);
+  --survey-text-transparent: rgba(20, 70, 51, 0.1);
+  
+  /* Spacing variables */
+  --survey-margin-auto: 0 auto;
+  --survey-gap-small: 1rem;
+  --survey-gap-medium: 1.5rem;
+  --survey-padding-small: 1rem;
+  --survey-margin-small: 1rem;
+  --survey-margin-medium: 2rem;
+  --survey-margin-large: 3rem;
+  
+  /* Size variables */
+  --survey-font-size-small: 0.9rem;
+  --survey-font-size-medium: 1rem;
+  --survey-font-size-large: 1.1rem;
+  --survey-font-size-xl: 1.2rem;
+  --survey-font-size-xxl: 1.5rem;
+  --survey-font-size-xxxl: 2.5rem;
+  --survey-font-size-icon: 2rem;
+  
+  /* Component sizes */
+  --survey-icon-size: 80px;
+  --survey-slider-thumb-size: 20px;
+  --survey-slider-height: 6px;
+  --survey-progress-height: 8px;
+  --survey-border-small: 4px;
+  --survey-logo-max-width: 320px;
+  --survey-option-min-width: 120px;
+  --survey-breakpoint-mobile: 768px;
+  
+  /* Additional small values */
+  --survey-margin-half: 0.5rem;
+  --survey-border-radius-large: 24px;
+  --survey-footer-content-max-width: 832px;
+  --survey-slider-background: #ddd;
 }
 
 .survey {
   max-width: var(--survey-max-width);
-  margin: 0 auto;
+  margin: var(--survey-margin-auto);
 }
 
 .survey-area {
@@ -24,7 +68,7 @@
   align-items: center;
   gap: var(--survey-gap);
   max-width: var(--survey-max-width);
-  margin: 0 auto;
+  margin: var(--survey-margin-auto);
   padding: var(--survey-padding);
   background: no-repeat center / 100% auto;
   color: var(--survey-white);
@@ -34,30 +78,67 @@
 .survey .content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--survey-gap-small);
   order: 1; /* content on left */
 }
 
-/* Simplified button targeting */
-.survey .button {
-  background-color: var(--survey-primary-color) !important;
-  color: var(--survey-text-color) !important;
-  padding: 0.75rem 1.5rem;
+/* Base button styles - shared by all buttons */
+.survey .button,
+.survey .btn-next {
+  background-color: var(--survey-primary-color);
+  color: var(--survey-text-color);
+  padding: var(--survey-button-padding) 1.5rem;
   border-radius: var(--survey-border-radius);
-  font-weight: 600;
+  font-weight: var(--survey-font-weight-semibold);
   text-decoration: none;
   border: none;
   cursor: pointer;
   display: inline-block;
+  font-size: var(--survey-font-size-medium);
   transition: background-color var(--survey-transition);
+}
+
+.survey .button {
+  padding: var(--survey-button-padding) 1.5rem;
+}
+
+.survey .btn-next {
+  padding: var(--survey-button-padding) var(--survey-margin-medium);
+}
+
+.survey .button:hover,
+.survey .btn-next:hover {
+  background-color: var(--survey-primary-hover);
+}
+
+/* Override for .button to maintain existing specificity */
+.survey .button {
+  background-color: var(--survey-primary-color) !important;
+  color: var(--survey-text-color) !important;
 }
 
 .survey .button:hover {
   background-color: var(--survey-primary-hover) !important;
 }
 
+.survey .btn-back {
+  background: transparent;
+  border: none;
+  color: var(--survey-text-color);
+  font-size: var(--survey-font-size-medium);
+  font-weight: var(--survey-font-weight-semibold);
+  cursor: pointer;
+  padding: var(--survey-button-padding) 0;
+  text-decoration: underline;
+  transition: opacity var(--survey-transition);
+}
+
+.survey .btn-back:hover {
+  opacity: 0.8;
+}
+
 .survey .logo {
-  max-width: 320px;
+  max-width: var(--survey-logo-max-width);
   justify-self: center;
   order: 2; /* logo on right */
 }
@@ -71,8 +152,8 @@
 .survey .options {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: var(--survey-gap-small);
+  margin-top: var(--survey-margin-medium);
   justify-content: center;
 }
 
@@ -87,24 +168,30 @@
   cursor: pointer;
 }
 
+/* Base option label styles */
 .survey .option label {
   display: inline-block;
-  padding: 0.75rem 2rem;
+  padding: var(--survey-option-padding);
   background-color: transparent;
-  border: 2px solid var(--survey-white);
+  border: 2px solid;
   border-radius: var(--survey-border-radius);
-  color: var(--survey-white);
-  font-weight: 500;
-  font-size: 1rem;
+  font-weight: var(--survey-font-weight-medium);
+  font-size: var(--survey-font-size-medium);
   cursor: pointer;
   transition: all var(--survey-transition);
   text-align: center;
-  min-width: 120px;
+  min-width: var(--survey-option-min-width);
   white-space: nowrap;
 }
 
+/* Default theme - white on dark background */
+.survey .option label {
+  border-color: var(--survey-white);
+  color: var(--survey-white);
+}
+
 .survey .option label:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--survey-white-transparent);
   transform: translateY(-2px);
 }
 
@@ -112,19 +199,17 @@
   background-color: var(--survey-text-color);
   border-color: var(--survey-text-color);
   color: var(--survey-white);
-  box-shadow: 0 4px 12px rgba(20, 70, 51, 0.3);
+  box-shadow: 0 var(--survey-border-small) 12px var(--survey-shadow-color);
 }
 
-/* Options styling inside survey form (white background) */
+/* Survey form theme - dark on light background */
 .survey .survey-form .option label {
   color: var(--survey-text-color);
   border-color: var(--survey-text-color);
-  background-color: transparent;
 }
 
 .survey .survey-form .option label:hover {
-  background-color: rgba(20, 70, 51, 0.1);
-  transform: translateY(-2px);
+  background-color: var(--survey-text-transparent);
 }
 
 .survey .survey-form .option input[type="radio"]:checked + label {
@@ -137,9 +222,9 @@
 .survey .progress {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 0 1rem;
+  gap: var(--survey-gap-small);
+  margin-bottom: var(--survey-margin-medium);
+  padding: 0 var(--survey-padding-small);
 }
 
 /* Survey Form Container */
@@ -156,55 +241,118 @@
 .survey .survey-form .content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--survey-gap-medium);
   align-items: center;
   text-align: center;
   background-color: var(--survey-form-content);
-  border-radius: 24px 24px 0 0; /* Only top corners rounded */
-  padding: 1rem;
+  border-radius: var(--survey-border-radius-large) var(--survey-border-radius-large) 0 0; /* Only top corners rounded */
+  padding: var(--survey-padding-small);
   margin-top: 0; /* Remove top margin so progress bar isn't pushed */
 }
 
+/* Slider Styles */
+.survey .slider-container {
+  width: 100%;
+  margin: var(--survey-margin-small) 0;
+}
+
+.survey .slider-question {
+  color: var(--survey-text-color);
+  font-size: var(--survey-font-size-xl);
+  font-weight: var(--survey-font-weight-semibold);
+  margin-bottom: var(--survey-margin-small);
+  text-align: center;
+}
+
+.survey .slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--survey-margin-half);
+  font-size: var(--survey-font-size-small);
+  color: var(--survey-text-color);
+  font-weight: var(--survey-font-weight-medium);
+}
+
+.survey .slider {
+  width: 100%;
+  height: var(--survey-slider-height);
+  border-radius: 3px;
+  background: var(--survey-slider-background);
+  outline: none;
+  margin: var(--survey-margin-half) 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.survey .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--survey-slider-thumb-size);
+  height: var(--survey-slider-thumb-size);
+  border-radius: 50%;
+  background: var(--survey-primary-color);
+  cursor: pointer;
+  border: 2px solid var(--survey-text-color);
+}
+
+.survey .slider::-moz-range-thumb {
+  width: var(--survey-slider-thumb-size);
+  height: var(--survey-slider-thumb-size);
+  border-radius: 50%;
+  background: var(--survey-primary-color);
+  cursor: pointer;
+  border: 2px solid var(--survey-text-color);
+}
+
+.survey .slider-value {
+  text-align: center;
+  font-weight: var(--survey-font-weight-semibold);
+  color: var(--survey-text-color);
+  margin-top: var(--survey-margin-half);
+  font-size: var(--survey-font-size-medium);
+}
+
+/* Typography styles */
 .survey .survey-form .title {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: var(--survey-font-size-xxxl);
+  font-weight: var(--survey-font-weight-bold);
   margin: 0;
   line-height: 1.2;
   color: var(--survey-text-color);
 }
 
 .survey .survey-form .question {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: var(--survey-font-size-xxl);
+  font-weight: var(--survey-font-weight-semibold);
   margin: 0;
   color: var(--survey-text-color);
 }
 
 .survey .survey-form .section-title {
   color: var(--survey-text-color);
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
+  font-size: var(--survey-font-size-medium);
+  font-weight: var(--survey-font-weight-semibold);
+  margin-bottom: var(--survey-margin-small);
 }
 
 .survey .survey-form .question-icon {
-  width: 80px;
-  height: 80px;
+  width: var(--survey-icon-size);
+  height: var(--survey-icon-size);
   background-color: var(--survey-primary-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  margin: 1rem 0;
+  font-size: var(--survey-font-size-icon);
+  margin: var(--survey-margin-small) 0;
 }
 
 /* Fact content styling */
 .survey .survey-form .fact-content {
   color: var(--survey-text-color);
-  font-size: 1.2rem;
+  font-size: var(--survey-font-size-xl);
   line-height: 1.6;
-  margin: 1rem 0;
+  margin: var(--survey-margin-small) 0;
 }
 
 /* Navigation Styling */
@@ -212,47 +360,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 3rem;
-  gap: 1rem;
-}
-
-.survey .btn-back {
-  background: transparent;
-  border: none;
-  color: var(--survey-text-color);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.75rem 0;
-  text-decoration: underline;
-  transition: opacity var(--survey-transition);
-}
-
-.survey .btn-back:hover {
-  opacity: 0.8;
-}
-
-.survey .btn-next {
-  background-color: var(--survey-primary-color);
-  color: var(--survey-text-color);
-  border: none;
-  padding: 0.75rem 2rem;
-  border-radius: var(--survey-border-radius);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color var(--survey-transition);
-}
-
-.survey .btn-next:hover {
-  background-color: var(--survey-primary-hover);
+  margin-top: var(--survey-margin-large);
+  gap: var(--survey-gap-small);
 }
 
 .survey .progress-track {
   flex: 1;
-  height: 8px;
+  height: var(--survey-progress-height);
   background-color: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  border-radius: var(--survey-border-small);
   overflow: hidden;
   position: relative;
 }
@@ -260,15 +376,16 @@
 .survey .progress-fill {
   height: 100%;
   background-color: var(--survey-primary-color);
-  border-radius: 4px;
+  border-radius: var(--survey-border-small);
   transition: width var(--survey-transition);
   min-width: 0;
 }
 
+/* Progress styles */
 .survey .progress-counter {
   color: var(--survey-white);
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: var(--survey-font-weight-semibold);
+  font-size: var(--survey-font-size-small);
   white-space: nowrap;
   min-width: fit-content;
 }
@@ -276,21 +393,19 @@
 /* Footer styling */
 .survey .footer-content {
   color: #000;
-  padding: 1rem;
-  margin-top: 0;
+  padding: var(--survey-padding-small);
+  margin: var(--survey-margin-auto);
   text-align: center;
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: var(--survey-font-size-large);
+  font-weight: var(--survey-font-weight-bold);
   line-height: 1.5;
   max-width: var(--footer-max-width);
-  margin-left: auto;
-  margin-right: auto;
   box-sizing: border-box;
 }
 
 .survey .footer-content p {
-  margin-bottom: 1rem;
-  max-width: 832px;
+  margin-bottom: var(--survey-margin-small);
+  max-width: var(--survey-footer-content-max-width);
   margin-left: auto;
   margin-right: auto;
 }
@@ -299,7 +414,7 @@
   margin-bottom: 0;
 }
 
-@media (width <= 768px) {
+@media (width <= var(--survey-breakpoint-mobile)) {
   .survey-area {
     grid-template-columns: 1fr;
     text-align: center;
@@ -311,6 +426,6 @@
   
   .survey .logo {
     order: 1;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--survey-gap-medium);
   }
 }
