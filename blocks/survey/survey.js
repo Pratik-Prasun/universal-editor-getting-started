@@ -1,6 +1,6 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
-/* eslint-disable no-use-before-define */
+
 // Simple function to fetch survey data using the exact same logic as customform.js
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
@@ -95,6 +95,31 @@ function renderSurveyTemplate(
   `;
 }
 
+function renderFactContent(questionData, currentIndex, surveyData) {
+  const {
+    Section, Icon, Title, Question,
+  } = questionData;
+
+  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
+    currentIndex,
+    surveyData,
+  );
+
+  const contentHTML = `
+    <h1 class="title">${Title}</h1>
+    <p class="fact-content">${Question}</p>
+  `;
+
+  return renderSurveyTemplate(
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
+    Section,
+    Icon,
+    contentHTML,
+  );
+}
+
 // Render different question types
 function renderQuestion(questionData, currentIndex, surveyData) {
   const {
@@ -141,31 +166,6 @@ function renderQuestion(questionData, currentIndex, surveyData) {
     <div class="options">
       ${optionsHTML}
     </div>
-  `;
-
-  return renderSurveyTemplate(
-    progress,
-    questionsCompleted,
-    totalActualQuestions,
-    Section,
-    Icon,
-    contentHTML,
-  );
-}
-
-function renderFactContent(questionData, currentIndex, surveyData) {
-  const {
-    Section, Icon, Title, Question,
-  } = questionData;
-
-  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
-    currentIndex,
-    surveyData,
-  );
-
-  const contentHTML = `
-    <h1 class="title">${Title}</h1>
-    <p class="fact-content">${Question}</p>
   `;
 
   return renderSurveyTemplate(
@@ -270,8 +270,43 @@ export default function decorate(block) {
     surveyArea.innerHTML = questionHTML;
 
     // Attach event listeners
+    // eslint-disable-next-line no-use-before-define
     attachNavigationListeners();
+    // eslint-disable-next-line no-use-before-define
     attachInputListeners();
+  }
+
+  // Function to attach Get Started button listener
+  function attachGetStartedListener() {
+    const getStartedButton = surveyArea.querySelector('.button-container .button');
+    if (getStartedButton) {
+      getStartedButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const surveyDataPath = getStartedButton.getAttribute('href');
+
+        try {
+          // Store original content
+          originalContent = surveyArea.innerHTML;
+
+          // Fetch and parse survey data
+          const data = await fetchSurveyData(surveyDataPath);
+          console.log('Survey data loaded:', data);
+
+          // Assuming the data is CSV format, parse it
+          surveyData = parseSurveyData(data);
+          console.log('Parsed survey questions:', surveyData);
+
+          // Start survey
+          currentQuestionIndex = 0;
+          surveyAnswers = {};
+          showQuestion(0);
+        } catch (error) {
+          console.error('Failed to load survey data:', error);
+          alert('Failed to load survey. Please try again.');
+        }
+      });
+    }
   }
 
   // Attach input event listeners
@@ -351,39 +386,6 @@ export default function decorate(block) {
           // Survey complete
           console.log('Survey completed:', surveyAnswers);
           alert('Survey completed! Check console for answers.');
-        }
-      });
-    }
-  }
-
-  // Function to attach Get Started button listener
-  function attachGetStartedListener() {
-    const getStartedButton = surveyArea.querySelector('.button-container .button');
-    if (getStartedButton) {
-      getStartedButton.addEventListener('click', async (e) => {
-        e.preventDefault();
-
-        const surveyDataPath = getStartedButton.getAttribute('href');
-
-        try {
-          // Store original content
-          originalContent = surveyArea.innerHTML;
-
-          // Fetch and parse survey data
-          const data = await fetchSurveyData(surveyDataPath);
-          console.log('Survey data loaded:', data);
-
-          // Assuming the data is CSV format, parse it
-          surveyData = parseSurveyData(data);
-          console.log('Parsed survey questions:', surveyData);
-
-          // Start survey
-          currentQuestionIndex = 0;
-          surveyAnswers = {};
-          showQuestion(0);
-        } catch (error) {
-          console.error('Failed to load survey data:', error);
-          alert('Failed to load survey. Please try again.');
         }
       });
     }
