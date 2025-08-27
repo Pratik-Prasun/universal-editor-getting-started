@@ -10,6 +10,7 @@
   --survey-padding: 2rem;
   --survey-border-radius: 999px;
   --survey-transition: 0.3s ease;
+  --survey-form-content:#fafafa;
 }
 
 .survey {
@@ -114,6 +115,24 @@
   box-shadow: 0 4px 12px rgba(20, 70, 51, 0.3);
 }
 
+/* Options styling inside survey form (white background) */
+.survey .survey-form .option label {
+  color: var(--survey-text-color);
+  border-color: var(--survey-text-color);
+  background-color: transparent;
+}
+
+.survey .survey-form .option label:hover {
+  background-color: rgba(20, 70, 51, 0.1);
+  transform: translateY(-2px);
+}
+
+.survey .survey-form .option input[type="radio"]:checked + label {
+  background-color: var(--survey-text-color);
+  border-color: var(--survey-text-color);
+  color: var(--survey-white);
+}
+
 /* Progress Bar Styling */
 .survey .progress {
   display: flex;
@@ -140,6 +159,10 @@
   gap: 1.5rem;
   align-items: center;
   text-align: center;
+  background-color: var(--survey-form-content);
+  border-radius: 24px 24px 0 0; /* Only top corners rounded */
+  padding: 1rem;
+  margin-top: 0; /* Remove top margin so progress bar isn't pushed */
 }
 
 .survey .survey-form .title {
@@ -147,6 +170,7 @@
   font-weight: bold;
   margin: 0;
   line-height: 1.2;
+  color: var(--survey-text-color);
 }
 
 .survey .survey-form .question {
@@ -172,6 +196,14 @@
   align-items: center;
   justify-content: center;
   font-size: 2rem;
+  margin: 1rem 0;
+}
+
+/* Fact content styling */
+.survey .survey-form .fact-content {
+  color: var(--survey-text-color);
+  font-size: 1.2rem;
+  line-height: 1.6;
   margin: 1rem 0;
 }
 
