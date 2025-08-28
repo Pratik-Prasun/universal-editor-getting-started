@@ -1,7 +1,147 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
-/* eslint-disable no-use-before-define */
-// Simple function to fetch survey data using the exact same logic as customform.js
+
+/**
+ * Survey Block - Interactive Survey Component for AEM Edge Delivery Services
+ *
+ * This module handles dynamic survey rendering with support for:
+ * - Multiple question types (radio, slider, fact cards)
+ * - Progress tracking and navigation
+ * - Related question grouping
+ * - Secure DOM manipulation without innerHTML risks
+ */
+
+// Survey configuration constants
+const SURVEY_CONSTANTS = {
+  MANDATORY_TRUE: 'TRUE',
+  QUESTION_TYPE: 'question',
+  FACT_TYPE: 'fact',
+  SLIDER_TYPE: 'slider',
+  RADIO_TYPE: 'radio',
+  JSON_EXTENSION: 'json',
+};
+
+/**
+ * Validates whether a survey question requires an answer before proceeding.
+ * Combines both mandatory flag and question type to determine requirement.
+ */
+function isAnswerRequired(question) {
+  return question.Mandatory === SURVEY_CONSTANTS.MANDATORY_TRUE
+    && question.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE;
+}
+
+/**
+ * Checks if the user has provided a valid answer for a given question.
+ * Handles both null and undefined values as invalid answers.
+ */
+function hasValidAnswer(question, answers) {
+  return answers[question.ContentId] != null;
+}
+
+// Check if two questions belong together (like q5a and q5b)
+function areQuestionsRelated(question1, question2) {
+  if (!question1 || !question2) return false;
+
+  // Extract base ID by removing the letter suffix (a, b, c, etc.)
+  const baseId1 = question1.ContentId.replace(/[a-z]$/, '');
+  const baseId2 = question2.ContentId.replace(/[a-z]$/, '');
+
+  return baseId1 === baseId2 && baseId1 !== question1.ContentId;
+}
+
+// Create DOM elements safely without innerHTML to prevent XSS
+function createElement(tag, className, textContent, attributes = {}) {
+  const element = document.createElement(tag);
+  if (className) element.classList.add(...className.split(' '));
+  if (textContent) element.textContent = textContent;
+
+  Object.entries(attributes).forEach(([key, value]) => {
+    if (key.startsWith('data-')) {
+      element.dataset[key.replace('data-', '')] = value;
+    } else {
+      element.setAttribute(key, value);
+    }
+  });
+
+  return element;
+}
+
+// Safely replace all content in a container
+function replaceContent(container, newContent) {
+  // Clear existing content safely
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+
+  // Add new content
+  if (typeof newContent === 'string') {
+    container.textContent = newContent;
+  } else if (newContent) {
+    container.appendChild(newContent);
+  }
+}
+
+// Create radio button options for multiple choice questions
+function createRadioOptions(contentId, options) {
+  const container = createElement('div', 'options');
+
+  options.forEach((option) => {
+    const optionDiv = createElement('div', 'option');
+
+    const input = createElement('input', '', '', {
+      type: 'radio',
+      id: `${contentId}-${option.replace(/\s+/g, '-').toLowerCase()}`,
+      name: contentId,
+      value: option,
+    });
+
+    const label = createElement('label', '', option, {
+      for: input.id,
+    });
+
+    optionDiv.appendChild(input);
+    optionDiv.appendChild(label);
+    container.appendChild(optionDiv);
+  });
+
+  return container;
+}
+
+// Create slider with labeled options (for rating scales)
+function createSlider(contentId, options, questionText = '') {
+  const container = createElement('div', 'slider-container');
+
+  if (questionText) {
+    const questionH3 = createElement('h3', 'slider-question', questionText);
+    container.appendChild(questionH3);
+  }
+
+  const labelsDiv = createElement('div', 'slider-labels');
+  options.forEach((option) => {
+    const span = createElement('span', '', option);
+    labelsDiv.appendChild(span);
+  });
+
+  const slider = createElement('input', 'slider', '', {
+    type: 'range',
+    id: contentId,
+    name: contentId,
+    min: '0',
+    max: String(options.length - 1),
+    value: '0',
+    'data-options': JSON.stringify(options),
+  });
+
+  const valueDiv = createElement('div', 'slider-value', options[0]);
+
+  container.appendChild(labelsDiv);
+  container.appendChild(slider);
+  container.appendChild(valueDiv);
+
+  return container;
+}
+
+// Fetch survey data - handles both direct JSON URLs and path mappings
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
   if (!surveyHref.endsWith('json')) {
@@ -22,7 +162,7 @@ async function fetchSurveyData(surveyHref) {
   return json;
 }
 
-// Parse survey data from JSON response
+// Parse and normalize survey data from API response
 function parseSurveyData(surveyResponse) {
   // API consistently returns {data: [...], total, offset, limit} format
   const questions = surveyResponse.data || [];
@@ -41,7 +181,7 @@ function parseSurveyData(surveyResponse) {
   return normalizedQuestions.sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
 }
 
-// Calculate progress for survey questions
+// Calculate survey progress based on completed questions
 function calculateProgress(currentIndex, surveyData) {
   // Calculate progress based on CountsAsQuestion
   const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
@@ -59,101 +199,54 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
-// Render shared survey template
-function renderSurveyTemplate(
+// Build the main survey template with progress bar and navigation
+function createSurveyTemplate(
   progress,
   questionsCompleted,
   totalActualQuestions,
   section,
   icon,
-  contentHTML,
+  contentElement,
 ) {
-  return `
-    <div class="survey-form">
-      <!-- Progress -->
-      <div class="progress">
-        <div class="progress-track">
-          <div class="progress-fill" style="width: ${progress}%"></div>
-        </div>
-        <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
-      </div>
-      <!-- Content -->
-      <div class="content">
-        <span class="section-title">${section}</span>
-        
-        <div class="question-icon">${icon}</div>
-        
-        ${contentHTML}
-        
-        <!-- Navigation -->
-        <div class="nav">
-          <button type="button" class="btn-back">Back</button>
-          <button type="button" class="btn-next">Next</button>
-        </div>
-      </div>
-    </div>
-  `;
+  const surveyForm = createElement('div', 'survey-form');
+
+  // Create progress section
+  const progressDiv = createElement('div', 'progress');
+  const progressTrack = createElement('div', 'progress-track');
+  const progressFill = createElement('div', 'progress-fill');
+  progressFill.style.width = `${progress}%`;
+  const progressCounter = createElement('div', 'progress-counter', `${questionsCompleted}/${totalActualQuestions}`);
+
+  progressTrack.appendChild(progressFill);
+  progressDiv.appendChild(progressTrack);
+  progressDiv.appendChild(progressCounter);
+
+  // Create content section
+  const contentDiv = createElement('div', 'content');
+  const sectionTitle = createElement('span', 'section-title', section);
+  const questionIcon = createElement('div', 'question-icon', icon);
+
+  contentDiv.appendChild(sectionTitle);
+  contentDiv.appendChild(questionIcon);
+  contentDiv.appendChild(contentElement);
+
+  // Create navigation
+  const navDiv = createElement('div', 'nav');
+  const backBtn = createElement('button', 'btn-back', 'Back', { type: 'button' });
+  const nextBtn = createElement('button', 'btn-next', 'Next', { type: 'button' });
+
+  navDiv.appendChild(backBtn);
+  navDiv.appendChild(nextBtn);
+  contentDiv.appendChild(navDiv);
+
+  surveyForm.appendChild(progressDiv);
+  surveyForm.appendChild(contentDiv);
+
+  return surveyForm;
 }
 
-// Render different question types
-function renderQuestion(questionData, currentIndex, surveyData) {
-  const {
-    ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
-  } = questionData;
-
-  if (ContentType === 'fact') {
-    return renderFactContent(questionData, currentIndex, surveyData);
-  }
-
-  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
-    currentIndex,
-    surveyData,
-  );
-
-  let optionsHTML = '';
-
-  if (OptionType === 'radio') {
-    optionsHTML = Options.map((option) => `
-      <div class="option">
-        <input type="radio" id="${ContentId}-${option.replace(/\s+/g, '-').toLowerCase()}" 
-               name="${ContentId}" value="${option}">
-        <label for="${ContentId}-${option.replace(/\s+/g, '-').toLowerCase()}">${option}</label>
-      </div>
-    `).join('');
-  } else if (OptionType === 'slider') {
-    optionsHTML = `
-      <div class="slider-container">
-        <div class="slider-labels">
-          ${Options.map((option) => `<span>${option}</span>`).join('')}
-        </div>
-        <input type="range" id="${ContentId}" name="${ContentId}" 
-               min="0" max="${Options.length - 1}" value="0" 
-               class="slider" data-options='${JSON.stringify(Options)}'>
-        <div class="slider-value">${Options[0]}</div>
-      </div>
-    `;
-  }
-
-  const contentHTML = `
-    ${Title ? `<h1 class="title">${Title}</h1>` : ''}
-    <h2 class="question">${Question}</h2>
-    
-    <div class="options">
-      ${optionsHTML}
-    </div>
-  `;
-
-  return renderSurveyTemplate(
-    progress,
-    questionsCompleted,
-    totalActualQuestions,
-    Section,
-    Icon,
-    contentHTML,
-  );
-}
-
-function renderFactContent(questionData, currentIndex, surveyData) {
+// Create fact/information slides (non-interactive content)
+function createFactContent(questionData, currentIndex, surveyData) {
   const {
     Section, Icon, Title, Question,
   } = questionData;
@@ -163,18 +256,90 @@ function renderFactContent(questionData, currentIndex, surveyData) {
     surveyData,
   );
 
-  const contentHTML = `
-    <h1 class="title">${Title}</h1>
-    <p class="fact-content">${Question}</p>
-  `;
+  const contentElement = createElement('div');
+  const titleH1 = createElement('h1', 'title', Title);
+  const factP = createElement('p', 'fact-content', Question);
 
-  return renderSurveyTemplate(
+  contentElement.appendChild(titleH1);
+  contentElement.appendChild(factP);
+
+  return createSurveyTemplate(
     progress,
     questionsCompleted,
     totalActualQuestions,
     Section,
     Icon,
-    contentHTML,
+    contentElement,
+  );
+}
+
+// Build interactive question slides (radio buttons, sliders, etc.)
+function createQuestion(questionData, currentIndex, surveyData) {
+  const {
+    ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
+  } = questionData;
+
+  if (ContentType === SURVEY_CONSTANTS.FACT_TYPE) {
+    return createFactContent(questionData, currentIndex, surveyData);
+  }
+
+  // Check if this question has a related follow-up question
+  const nextQuestion = surveyData[currentIndex + 1];
+  const hasRelatedQuestion = areQuestionsRelated(questionData, nextQuestion);
+
+  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
+    currentIndex,
+    surveyData,
+  );
+
+  const contentElement = createElement('div');
+
+  // Add title if present
+  if (Title) {
+    const titleH1 = createElement('h1', 'title', Title);
+    contentElement.appendChild(titleH1);
+  }
+
+  // Add question text (unless it's a related slider pair)
+  if (!(hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE)) {
+    const questionH2 = createElement('h2', 'question', Question);
+    contentElement.appendChild(questionH2);
+  }
+
+  // Create options container
+  const optionsDiv = createElement('div', 'options');
+
+  if (OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+    const radioOptions = createRadioOptions(ContentId, Options);
+    optionsDiv.appendChild(radioOptions);
+  } else if (OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+    if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      // Create two related sliders
+      const slider1 = createSlider(ContentId, Options, Question);
+      const slider2 = createSlider(
+        nextQuestion.ContentId,
+        nextQuestion.Options,
+        nextQuestion.Question,
+      );
+
+      optionsDiv.appendChild(slider1);
+      optionsDiv.appendChild(slider2);
+    } else {
+      // Single slider
+      const slider = createSlider(ContentId, Options);
+      optionsDiv.appendChild(slider);
+    }
+  }
+
+  contentElement.appendChild(optionsDiv);
+
+  return createSurveyTemplate(
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
+    Section,
+    Icon,
+    contentElement,
   );
 }
 
@@ -193,7 +358,7 @@ export default function decorate(block) {
 
   // create a survey-area wrapper if missing
   if (!surveyArea && (logo || content)) {
-    surveyArea = document.createElement('div');
+    surveyArea = createElement('div');
     block.prepend(surveyArea);
   }
 
@@ -246,12 +411,15 @@ export default function decorate(block) {
     }
   }
 
-  // Convert button paragraph to div
+  // Convert button paragraph to div using consistent approach
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
-    const div = document.createElement('div');
-    div.className = buttonContainer.className;
-    div.innerHTML = buttonContainer.innerHTML;
+    const div = createElement('div');
+    div.className = buttonContainer.className; // Keep existing classes intact
+    // Copy all child nodes safely
+    while (buttonContainer.firstChild) {
+      div.appendChild(buttonContainer.firstChild);
+    }
     buttonContainer.parentNode.replaceChild(div, buttonContainer);
   }
 
@@ -266,46 +434,126 @@ export default function decorate(block) {
     currentQuestionIndex = index;
     const questionData = surveyData[index];
 
-    const questionHTML = renderQuestion(questionData, index, surveyData);
-    surveyArea.innerHTML = questionHTML;
+    const questionElement = createQuestion(questionData, index, surveyData);
+
+    // Preserve the original container structure and styling
+    surveyArea.className = 'survey-area';
+    replaceContent(surveyArea, questionElement);
 
     // Attach event listeners
+    // eslint-disable-next-line no-use-before-define
     attachNavigationListeners();
+    // eslint-disable-next-line no-use-before-define
     attachInputListeners();
+  }
+
+  // Handle Get Started button click
+  async function handleGetStartedClick(e) {
+    e.preventDefault();
+
+    const surveyDataPath = e.target.getAttribute('href');
+
+    try {
+      // Store original content
+      originalContent = surveyArea.innerHTML;
+
+      // Fetch and parse survey data
+      const data = await fetchSurveyData(surveyDataPath);
+      console.log('Survey data loaded:', data);
+
+      // Assuming the data is CSV format, parse it
+      surveyData = parseSurveyData(data);
+      console.log('Parsed survey questions:', surveyData);
+
+      // Start survey
+      currentQuestionIndex = 0;
+      surveyAnswers = {};
+      showQuestion(0);
+    } catch (error) {
+      console.error('Failed to load survey data:', error);
+      alert('Failed to load survey. Please try again.');
+    }
+  }
+
+  // Function to attach Get Started button listener
+  function attachGetStartedListener() {
+    // Cache DOM query
+    const getStartedButton = surveyArea.querySelector('.button-container .button');
+    if (getStartedButton) {
+      getStartedButton.addEventListener('click', handleGetStartedClick);
+    }
+  }
+
+  // Handle slider input change
+  function handleSliderInput(e, options, questionId, valueDisplay) {
+    const selectedIndex = parseInt(e.target.value, 10);
+    valueDisplay.textContent = options[selectedIndex];
+    surveyAnswers[questionId] = options[selectedIndex];
+  }
+
+  // Handle radio button change
+  function handleRadioChange(e, questionId) {
+    surveyAnswers[questionId] = e.target.value;
   }
 
   // Attach input event listeners
   function attachInputListeners() {
     const currentQuestion = surveyData[currentQuestionIndex];
+    const nextQuestion = surveyData[currentQuestionIndex + 1];
+    const hasRelatedQuestion = areQuestionsRelated(currentQuestion, nextQuestion);
 
-    if (currentQuestion.OptionType === 'slider') {
-      const slider = surveyArea.querySelector('.slider');
-      const valueDisplay = surveyArea.querySelector('.slider-value');
+    if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+        // Handle both sliders for related questions
+        const sliders = surveyArea.querySelectorAll('.slider');
+        sliders.forEach((slider, index) => {
+          const valueDisplay = slider.parentElement.querySelector('.slider-value');
+          const questionData = index === 0 ? currentQuestion : nextQuestion;
+          const options = JSON.parse(slider.dataset.options);
 
-      if (slider && valueDisplay) {
-        const options = JSON.parse(slider.dataset.options);
+          slider.addEventListener('input', (e) => {
+            handleSliderInput(e, options, questionData.ContentId, valueDisplay);
+          });
 
-        slider.addEventListener('input', (e) => {
-          const selectedIndex = parseInt(e.target.value, 10);
-          valueDisplay.textContent = options[selectedIndex];
-          surveyAnswers[currentQuestion.ContentId] = options[selectedIndex];
+          // Set initial value if answer exists
+          if (surveyAnswers[questionData.ContentId]) {
+            const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
+            if (answerIndex !== -1) {
+              slider.value = answerIndex;
+              valueDisplay.textContent = options[answerIndex];
+            }
+          }
         });
+      } else {
+        // Single slider logic (existing code)
+        const slider = surveyArea.querySelector('.slider');
+        const valueDisplay = surveyArea.querySelector('.slider-value');
 
-        // Set initial value if answer exists
-        if (surveyAnswers[currentQuestion.ContentId]) {
-          const answerIndex = options.indexOf(surveyAnswers[currentQuestion.ContentId]);
-          if (answerIndex !== -1) {
-            slider.value = answerIndex;
-            valueDisplay.textContent = options[answerIndex];
+        if (slider && valueDisplay) {
+          const options = JSON.parse(slider.dataset.options);
+
+          slider.addEventListener('input', (e) => {
+            handleSliderInput(e, options, currentQuestion.ContentId, valueDisplay);
+          });
+
+          // Set initial value if answer exists
+          if (surveyAnswers[currentQuestion.ContentId]) {
+            const answerIndex = options.indexOf(surveyAnswers[currentQuestion.ContentId]);
+            if (answerIndex !== -1) {
+              slider.value = answerIndex;
+              valueDisplay.textContent = options[answerIndex];
+            }
           }
         }
       }
-    } else if (currentQuestion.OptionType === 'radio') {
+    } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+      // Cache DOM query
       const radioButtons = surveyArea.querySelectorAll(`input[name="${currentQuestion.ContentId}"]`);
 
       radioButtons.forEach((radio) => {
+        // Use extracted handler function
         radio.addEventListener('change', (e) => {
-          surveyAnswers[currentQuestion.ContentId] = e.target.value;
+          handleRadioChange(e, currentQuestion.ContentId);
         });
 
         // Restore previous answer
@@ -316,77 +564,99 @@ export default function decorate(block) {
     }
   }
 
+  // Handle back button click
+  function handleBackClick() {
+    // Emit custom event instead of direct function call
+    surveyArea.dispatchEvent(new CustomEvent('survey:back'));
+  }
+
+  // Handle next button click
+  function handleNextClick() {
+    const currentQuestion = surveyData[currentQuestionIndex];
+    const nextQuestion = surveyData[currentQuestionIndex + 1];
+    const hasRelatedQuestion = areQuestionsRelated(currentQuestion, nextQuestion);
+
+    // Validate mandatory fields for current question
+    if (isAnswerRequired(currentQuestion) && !hasValidAnswer(currentQuestion, surveyAnswers)) {
+      alert('Please select an option before continuing.');
+      return;
+    }
+
+    // If there's a related question displayed, validate it too
+    if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      if (isAnswerRequired(nextQuestion) && !hasValidAnswer(nextQuestion, surveyAnswers)) {
+        alert('Please select an option for both questions before continuing.');
+        return;
+      }
+    }
+
+    // Emit custom event instead of direct function call
+    surveyArea.dispatchEvent(new CustomEvent('survey:next'));
+  }
+
   // Attach navigation event listeners
   function attachNavigationListeners() {
+    // Cache DOM queries
     const backButton = surveyArea.querySelector('.btn-back');
     const nextButton = surveyArea.querySelector('.btn-next');
 
     if (backButton) {
-      backButton.addEventListener('click', () => {
-        if (currentQuestionIndex === 0) {
-          // Go back to original content
-          surveyArea.innerHTML = originalContent;
-          attachGetStartedListener();
-        } else {
-          showQuestion(currentQuestionIndex - 1);
-        }
-      });
+      backButton.addEventListener('click', handleBackClick);
     }
 
     if (nextButton) {
-      nextButton.addEventListener('click', () => {
-        const currentQuestion = surveyData[currentQuestionIndex];
-
-        // Validate mandatory fields
-        if (currentQuestion.Mandatory === 'TRUE' && currentQuestion.ContentType === 'question') {
-          if (!surveyAnswers[currentQuestion.ContentId]) {
-            alert('Please select an option before continuing.');
-            return;
-          }
-        }
-
-        if (currentQuestionIndex < surveyData.length - 1) {
-          showQuestion(currentQuestionIndex + 1);
-        } else {
-          // Survey complete
-          console.log('Survey completed:', surveyAnswers);
-          alert('Survey completed! Check console for answers.');
-        }
-      });
+      nextButton.addEventListener('click', handleNextClick);
     }
   }
 
-  // Function to attach Get Started button listener
-  function attachGetStartedListener() {
-    const getStartedButton = surveyArea.querySelector('.button-container .button');
-    if (getStartedButton) {
-      getStartedButton.addEventListener('click', async (e) => {
-        e.preventDefault();
+  // Survey navigation event handlers
+  if (surveyArea) {
+    // Handle back navigation
+    surveyArea.addEventListener('survey:back', () => {
+      if (currentQuestionIndex === 0) {
+        // Go back to original content (trusted content, can use innerHTML)
+        replaceContent(surveyArea);
+        surveyArea.innerHTML = originalContent;
+        attachGetStartedListener();
+      } else {
+        let prevIndex = currentQuestionIndex - 1;
 
-        const surveyDataPath = getStartedButton.getAttribute('href');
+        // Check if the previous question was part of a related pair that we skipped
+        if (prevIndex > 0) {
+          const prevPrevQuestion = surveyData[prevIndex - 1];
+          const prevQuestion = surveyData[prevIndex];
 
-        try {
-          // Store original content
-          originalContent = surveyArea.innerHTML;
-
-          // Fetch and parse survey data
-          const data = await fetchSurveyData(surveyDataPath);
-          console.log('Survey data loaded:', data);
-
-          // Assuming the data is CSV format, parse it
-          surveyData = parseSurveyData(data);
-          console.log('Parsed survey questions:', surveyData);
-
-          // Start survey
-          currentQuestionIndex = 0;
-          surveyAnswers = {};
-          showQuestion(0);
-        } catch (error) {
-          console.error('Failed to load survey data:', error);
-          alert('Failed to load survey. Please try again.');
+          // If previous question was the second of a related pair, go back to the first one
+          if (areQuestionsRelated(prevPrevQuestion, prevQuestion)) {
+            prevIndex -= 1;
+          }
         }
-      });
-    }
+
+        showQuestion(prevIndex);
+      }
+    });
+
+    // Handle next/forward navigation
+    surveyArea.addEventListener('survey:next', () => {
+      const currentQuestion = surveyData[currentQuestionIndex];
+      const nextQuestion = surveyData[currentQuestionIndex + 1];
+      const hasRelatedQuestion = areQuestionsRelated(currentQuestion, nextQuestion);
+
+      let nextIndex = currentQuestionIndex + 1;
+
+      // If current question has a related follow-up, skip it since it was already displayed
+      if (hasRelatedQuestion && nextQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+        nextIndex = currentQuestionIndex + 2;
+      }
+
+      if (nextIndex < surveyData.length) {
+        showQuestion(nextIndex);
+      } else {
+        // Survey complete
+        console.log('Survey completed:', surveyAnswers);
+        alert('Survey completed! Check console for answers.');
+      }
+    });
   }
 
   // Initialize Get Started button
