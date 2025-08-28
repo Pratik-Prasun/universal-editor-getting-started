@@ -6,7 +6,7 @@
   --survey-white: #fff;
   --survey-max-width: 1140px;
   --footer-max-width: 1120px;
-  --survey-gap: 2rem;
+  --survey-gap: 5rem;
   --survey-padding: 2rem;
   --survey-border-radius: 999px;
   --survey-transition: 0.3s ease;
@@ -39,6 +39,9 @@
   --survey-font-size-xxl: 1.5rem;
   --survey-font-size-xxxl: 2.5rem;
   --survey-font-size-icon: 2rem;
+  --survey-font-size-p: 1.75rem;
+  --survey-font-size-h1: 2.5rem;
+  --survey-font-size-button: 1.25rem;
   
   /* Component sizes */
   --survey-icon-size: 80px;
@@ -73,6 +76,12 @@
   background: no-repeat center / 100% auto;
   color: var(--survey-white);
   box-sizing: border-box;
+  font-family: helvetica;
+  line-height: 1.2;
+}
+
+.survey-area:has(> .survey-form) {
+  padding: 0;
 }
 
 .survey .content {
@@ -80,6 +89,24 @@
   flex-direction: column;
   gap: var(--survey-gap-small);
   order: 1; /* content on left */
+}
+.survey-area .content {
+  width: 590px;
+}
+.survey-form .content {
+  width: auto;
+}
+
+.survey .content p{
+ font-size: var(--survey-font-size-p) ;
+}
+.survey .content h1{
+ font-size: var(--survey-font-size-h1) ;
+ margin: 0 0 8px;
+}
+.survey .content h5{
+ font-size: var(--survey-font-size-xxl) ;
+ margin: 0 0 8px;
 }
 
 /* Base button styles - shared by all buttons */
@@ -94,7 +121,7 @@
   border: none;
   cursor: pointer;
   display: inline-block;
-  font-size: var(--survey-font-size-medium);
+  font-size: var(--survey-font-size-button);
   transition: background-color var(--survey-transition);
 }
 
@@ -124,7 +151,7 @@
 .survey .btn-back {
   background: transparent;
   border: none;
-  color: var(--survey-text-color);
+  color: #497527;
   font-size: var(--survey-font-size-medium);
   font-weight: var(--survey-font-weight-semibold);
   cursor: pointer;
@@ -135,6 +162,7 @@
 
 .survey .btn-back:hover {
   opacity: 0.8;
+  color: var(--survey-text-color)
 }
 
 .survey .logo {
@@ -192,7 +220,6 @@
 
 .survey .option label:hover {
   background-color: var(--survey-white-transparent);
-  transform: translateY(-2px);
 }
 
 .survey .option input[type="radio"]:checked + label {
@@ -209,7 +236,8 @@
 }
 
 .survey .survey-form .option label:hover {
-  background-color: var(--survey-text-transparent);
+  background-color: var(--survey-text-color);
+  color: var(--survey-white);
 }
 
 .survey .survey-form .option input[type="radio"]:checked + label {
