@@ -161,7 +161,6 @@
 }
 
 .survey .btn-back:hover {
-  opacity: 0.8;
   color: var(--survey-text-color)
 }
 
