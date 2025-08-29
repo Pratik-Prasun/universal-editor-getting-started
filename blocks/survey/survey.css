@@ -399,6 +399,7 @@
   font-size: var(--survey-font-size-medium);
   font-weight: var(--survey-font-weight-semibold);
   margin-bottom: var(--survey-spacing-small);
+  align-self: flex-start;
 }
 
 .survey .survey-form .fact-content {
