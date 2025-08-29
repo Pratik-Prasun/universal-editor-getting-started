@@ -10,24 +10,20 @@
   --survey-padding: 2rem;
   --survey-border-radius: 999px;
   --survey-transition: 0.3s ease;
-  --survey-form-content: #fafafa;
   
   /* Additional variables to reduce repetition */
   --survey-button-padding: 0.75rem;
   --survey-option-padding: 0.75rem 2rem;
   --survey-font-weight-medium: 500;
   --survey-font-weight-semibold: 600;
-  --survey-font-weight-bold: bold;
   --survey-shadow-color: rgba(20, 70, 51, 0.3);
   --survey-white-transparent: rgba(255, 255, 255, 0.1);
   --survey-text-transparent: rgba(20, 70, 51, 0.1);
   
-  /* Spacing variables */
+  /* Spacing variables - consolidated */
   --survey-margin-auto: 0 auto;
-  --survey-gap-small: 1rem;
+  --survey-spacing-small: 1rem; /* Replaces gap-small, padding-small, margin-small */
   --survey-gap-medium: 1.5rem;
-  --survey-padding-small: 1rem;
-  --survey-margin-small: 1rem;
   --survey-margin-medium: 2rem;
   --survey-margin-large: 3rem;
   
@@ -37,10 +33,9 @@
   --survey-font-size-large: 1.1rem;
   --survey-font-size-xl: 1.2rem;
   --survey-font-size-xxl: 1.5rem;
-  --survey-font-size-xxxl: 2.5rem;
+  --survey-font-size-xxxl: 2.5rem; /* Also used for h1 */
   --survey-font-size-icon: 2rem;
   --survey-font-size-p: 1.75rem;
-  --survey-font-size-h1: 2.5rem;
   --survey-font-size-button: 1.25rem;
   
   /* Component sizes */
@@ -57,7 +52,6 @@
   --survey-margin-half: 0.5rem;
   --survey-border-radius-large: 24px;
   --survey-footer-content-max-width: 832px;
-  --survey-slider-background: #ddd;
 }
 
 .survey {
@@ -73,11 +67,13 @@
   max-width: var(--survey-max-width);
   margin: var(--survey-margin-auto);
   padding: var(--survey-padding);
-  background: no-repeat center / 100% auto;
+  background: no-repeat center / cover;
   color: var(--survey-white);
   box-sizing: border-box;
   font-family: helvetica;
   line-height: 1.2;
+  min-height: 500px;
+  background-position: center center;
 }
 
 .survey-area:has(> .survey-form) {
@@ -87,11 +83,12 @@
 .survey .content {
   display: flex;
   flex-direction: column;
-  gap: var(--survey-gap-small);
+  gap: var(--survey-spacing-small);
   order: 1; /* content on left */
 }
 .survey-area .content {
-  width: 590px;
+  width: 100%;
+  max-width: 590px;
 }
 .survey-form .content {
   width: auto;
@@ -101,7 +98,7 @@
  font-size: var(--survey-font-size-p) ;
 }
 .survey .content h1{
- font-size: var(--survey-font-size-h1) ;
+ font-size: var(--survey-font-size-xxxl) ;
  margin: 0 0 8px;
 }
 .survey .content h5{
@@ -179,7 +176,7 @@
 .survey .options {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--survey-gap-small);
+  gap: var(--survey-spacing-small);
   margin-top: var(--survey-margin-medium);
   justify-content: center;
 }
@@ -249,20 +246,21 @@
 .survey .progress {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--survey-gap-small) / 2);
-  margin: calc(var(--survey-margin-small) * 3) var(--survey-margin-small) var(--survey-margin-small);
-  padding: 0 var(--survey-padding-small);
+  gap: calc(var(--survey-spacing-small) / 2);
+  margin: calc(var(--survey-spacing-small) * 3) var(--survey-spacing-small) var(--survey-spacing-small);
+  padding: 0 var(--survey-spacing-small);
 }
 
 /* Survey Form Container */
 .survey .survey-form {
   grid-column: 1 / -1; /* Span both columns when inside survey-area */
-  max-width: none; /* Remove max-width constraint when inside grid */
-  margin: 0;
+  max-width: var(--survey-max-width); /* Respect the overall max width */
+  margin: var(--survey-margin-auto);
   padding: 0;
   background: #3D6221;
   color: var(--survey-white);
   box-sizing: border-box;
+  width: 100%;
 }
 
 .survey .survey-form .content {
@@ -271,23 +269,26 @@
   gap: var(--survey-gap-medium);
   align-items: center;
   text-align: center;
-  background-color: var(--survey-form-content);
+  background-color: #fafafa;
   border-radius: var(--survey-border-radius-large) var(--survey-border-radius-large) 0 0; /* Only top corners rounded */
-  padding: var(--survey-padding-small);
+  padding: var(--survey-spacing-small);
   margin-top: 0; /* Remove top margin so progress bar isn't pushed */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Slider Styles */
 .survey .slider-container {
   width: 100%;
-  margin: var(--survey-margin-small) 0;
+  margin: var(--survey-spacing-small) 0;
 }
 
 .survey .slider-question {
   color: var(--survey-text-color);
   font-size: var(--survey-font-size-xl);
   font-weight: var(--survey-font-weight-semibold);
-  margin-bottom: var(--survey-margin-small);
+  margin-bottom: var(--survey-spacing-small);
   text-align: center;
 }
 
@@ -304,7 +305,7 @@
   width: 100%;
   height: var(--survey-slider-height);
   border-radius: 3px;
-  background: var(--survey-slider-background);
+  background: #ddd;
   outline: none;
   margin: var(--survey-margin-half) 0;
   -webkit-appearance: none;
@@ -342,7 +343,7 @@
 /* Typography styles */
 .survey .survey-form .title {
   font-size: var(--survey-font-size-xxxl);
-  font-weight: var(--survey-font-weight-bold);
+  font-weight: bold;
   margin: 0;
   line-height: 1.2;
   color: var(--survey-text-color);
@@ -359,7 +360,7 @@
   color: var(--survey-text-color);
   font-size: var(--survey-font-size-medium);
   font-weight: var(--survey-font-weight-semibold);
-  margin-bottom: var(--survey-margin-small);
+  margin-bottom: var(--survey-spacing-small);
 }
 
 .survey .survey-form .question-icon {
@@ -371,7 +372,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--survey-font-size-icon);
-  margin: var(--survey-margin-small) 0;
+  margin: var(--survey-spacing-small) 0;
 }
 
 /* Fact content styling */
@@ -379,7 +380,7 @@
   color: var(--survey-text-color);
   font-size: var(--survey-font-size-xl);
   line-height: 1.6;
-  margin: var(--survey-margin-small) 0;
+  margin: var(--survey-spacing-small) 0;
 }
 
 /* Navigation Styling */
@@ -388,7 +389,7 @@
   justify-content: space-between;
   align-items: center;
   margin-top: var(--survey-margin-large);
-  gap: var(--survey-gap-small);
+  gap: var(--survey-spacing-small);
 }
 
 .survey .progress-track {
@@ -419,18 +420,18 @@
 /* Footer styling */
 .survey .footer-content {
   color: #000;
-  padding: var(--survey-padding-small);
+  padding: var(--survey-spacing-small);
   margin: var(--survey-margin-auto);
   text-align: center;
   font-size: var(--survey-font-size-large);
-  font-weight: var(--survey-font-weight-bold);
+  font-weight: bold;
   line-height: 1.5;
   max-width: var(--footer-max-width);
   box-sizing: border-box;
 }
 
 .survey .footer-content p {
-  margin-bottom: var(--survey-margin-small);
+  margin-bottom: var(--survey-spacing-small);
   max-width: var(--survey-footer-content-max-width);
   margin-left: auto;
   margin-right: auto;
