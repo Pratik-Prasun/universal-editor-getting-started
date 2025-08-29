@@ -47,7 +47,7 @@
   --survey-icon-size: 80px;
   --survey-slider-thumb-size: 20px;
   --survey-slider-height: 6px;
-  --survey-progress-height: 8px;
+  --survey-progress-height: 16px;
   --survey-border-small: 4px;
   --survey-logo-max-width: 320px;
   --survey-option-min-width: 120px;
@@ -248,9 +248,9 @@
 /* Progress Bar Styling */
 .survey .progress {
   display: flex;
-  align-items: center;
-  gap: var(--survey-gap-small);
-  margin-bottom: var(--survey-margin-medium);
+  flex-direction: column;
+  gap: calc(var(--survey-gap-small) / 2);
+  margin: calc(var(--survey-margin-small) * 3) var(--survey-margin-small) var(--survey-margin-small);
   padding: 0 var(--survey-padding-small);
 }
 
@@ -260,7 +260,7 @@
   max-width: none; /* Remove max-width constraint when inside grid */
   margin: 0;
   padding: 0;
-  background: none; /* Background is handled by survey-area */
+  background: #3D6221;
   color: var(--survey-white);
   box-sizing: border-box;
 }
@@ -392,10 +392,10 @@
 }
 
 .survey .progress-track {
-  flex: 1;
+  width: 100%;
   height: var(--survey-progress-height);
   background-color: rgba(255, 255, 255, 0.3);
-  border-radius: var(--survey-border-small);
+  border-radius: calc(var(--survey-progress-height) / 2);
   overflow: hidden;
   position: relative;
 }
@@ -403,7 +403,7 @@
 .survey .progress-fill {
   height: 100%;
   background-color: var(--survey-primary-color);
-  border-radius: var(--survey-border-small);
+  border-radius: calc(var(--survey-progress-height) / 2);
   transition: width var(--survey-transition);
   min-width: 0;
 }
@@ -413,8 +413,7 @@
   color: var(--survey-white);
   font-weight: var(--survey-font-weight-semibold);
   font-size: var(--survey-font-size-small);
-  white-space: nowrap;
-  min-width: fit-content;
+  text-align: left;
 }
 
 /* Footer styling */
