@@ -325,11 +325,16 @@
 
 /* Wrapper for slider track elements only (excludes question title) */
 .survey .slider-track-wrapper {
-  max-width: 520px;
+  width: 730px;
+  height: 228px;
   margin-left: auto;
   margin-right: auto;
   position: relative;
   box-sizing: border-box;
+  border: 2px solid #333;
+  border-radius: 20px;
+  padding: 70px 105px;
+  margin-top: 20px;
 }
 
 .survey .slider-question {
@@ -361,15 +366,15 @@
 }
 
 .survey .slider-labels span:nth-child(2) {
-  left: 173px;
+  left: 172px;
 }
 
 .survey .slider-labels span:nth-child(3) {
-  left: 346.5px;
+  left: 344px;
 }
 
 .survey .slider-labels span:nth-child(4) {
-  left: 520px;
+  left: 516px;
 }
 
 /* Create vertical marks at slider positions */
@@ -377,15 +382,15 @@
   content: '';
   position: absolute;
   top: 100%;
-  left: -1px;
+  left: 0;
   margin-top: 8px;
   width: 2px;
   height: 26px;
   background: #333;
   box-shadow: 
-    173px 0 0 #333,
-    346.5px 0 0 #333,
-    520px 0 0 #333;
+    172px 0 0 #333,
+    344px 0 0 #333,
+    516px 0 0 #333;
   pointer-events: none;
 }
 
