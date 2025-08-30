@@ -417,7 +417,7 @@
   z-index: 10;
   
   /* Move above the slider */
-  top: -60px;
+  top: -40px;
 }
 
 /* Speech bubble pointer for selected labels only */
