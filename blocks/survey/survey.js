@@ -64,7 +64,7 @@ function findRelatedQuestions(surveyData, startIndex) {
 }
 
 // Create DOM elements safely without innerHTML to prevent XSS
-function createElement(tag, className, textContent, attributes = {}) {
+function createElement(tag, className = '', textContent = '', attributes = {}) {
   const element = document.createElement(tag);
   if (className) element.classList.add(...className.split(' '));
   if (textContent) element.textContent = textContent;
@@ -78,6 +78,48 @@ function createElement(tag, className, textContent, attributes = {}) {
   });
 
   return element;
+}
+
+// Helper function for creating common div elements
+function createDiv(className = '', textContent = '') {
+  return createElement('div', className, textContent);
+}
+
+// Helper function for creating buttons with common attributes
+function createButton(className, textContent, type = 'button') {
+  return createElement('button', className, textContent, { type });
+}
+
+// Helper function to add CSS class conditionally
+function addClassIf(element, className, condition = true) {
+  if (element && condition) {
+    element.classList.add(className);
+  }
+}
+
+// Helper function to move node to target parent with class
+function moveNode(node, targetParent, className) {
+  if (node) {
+    addClassIf(node, className);
+    if (targetParent && node.parentElement !== targetParent) {
+      targetParent.appendChild(node);
+    }
+  }
+}
+
+// Helper function to create and append multiple children to a parent
+function appendChildren(parent, children) {
+  children.forEach((child) => {
+    if (child) parent.appendChild(child);
+  });
+  return parent;
+}
+
+// Helper function to attach event listeners to multiple elements
+function attachListeners(elements, eventType, handler) {
+  elements.forEach((element) => {
+    if (element) element.addEventListener(eventType, handler);
+  });
 }
 
 // Safely replace all content in a container
@@ -97,11 +139,7 @@ function replaceContent(container, newContent) {
 
 // Create radio button options for multiple choice questions
 function createRadioOptions(contentId, options) {
-  const container = createElement('div', 'options');
-
-  options.forEach((option) => {
-    const optionDiv = createElement('div', 'option');
-
+  const optionElements = options.map((option) => {
     const input = createElement('input', '', '', {
       type: 'radio',
       id: `${contentId}-${option.replace(/\s+/g, '-').toLowerCase()}`,
@@ -113,28 +151,22 @@ function createRadioOptions(contentId, options) {
       for: input.id,
     });
 
-    optionDiv.appendChild(input);
-    optionDiv.appendChild(label);
-    container.appendChild(optionDiv);
+    return appendChildren(createDiv('option'), [input, label]);
   });
 
-  return container;
+  return appendChildren(createDiv('options'), optionElements);
 }
 
 // Create slider with labeled options (for rating scales)
 function createSlider(contentId, options, questionText = '') {
-  const container = createElement('div', 'slider-container');
+  const elements = [];
 
   if (questionText) {
-    const questionH3 = createElement('h3', 'slider-question', questionText);
-    container.appendChild(questionH3);
+    elements.push(createElement('h3', 'slider-question', questionText));
   }
 
-  const labelsDiv = createElement('div', 'slider-labels');
-  options.forEach((option) => {
-    const span = createElement('span', '', option);
-    labelsDiv.appendChild(span);
-  });
+  const labelSpans = options.map((option) => createElement('span', '', option));
+  const labelsDiv = appendChildren(createDiv('slider-labels'), labelSpans);
 
   const slider = createElement('input', 'slider', '', {
     type: 'range',
@@ -146,13 +178,10 @@ function createSlider(contentId, options, questionText = '') {
     'data-options': JSON.stringify(options),
   });
 
-  const valueDiv = createElement('div', 'slider-value', options[0]);
+  const valueDiv = createDiv('slider-value', options[0]);
 
-  container.appendChild(labelsDiv);
-  container.appendChild(slider);
-  container.appendChild(valueDiv);
-
-  return container;
+  elements.push(labelsDiv, slider, valueDiv);
+  return appendChildren(createDiv('slider-container'), elements);
 }
 
 // Fetch survey data - handles both direct JSON URLs and path mappings
@@ -197,17 +226,13 @@ function parseSurveyData(surveyResponse) {
 
 // Calculate survey progress based on completed questions
 function calculateProgress(currentIndex, surveyData) {
-  // Calculate progress based on CountsAsQuestion
   const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
   const totalActualQuestions = actualQuestions.length;
 
-  // Count how many actual questions have been completed up to current index
-  let questionsCompleted = 0;
-  for (let i = 0; i <= currentIndex; i += 1) {
-    if (surveyData[i].CountsAsQuestion === 'TRUE') {
-      questionsCompleted += 1;
-    }
-  }
+  const questionsCompleted = surveyData
+    .slice(0, currentIndex + 1)
+    .filter((q) => q.CountsAsQuestion === 'TRUE')
+    .length;
 
   const progress = (questionsCompleted / totalActualQuestions) * 100;
   return { progress, questionsCompleted, totalActualQuestions };
@@ -222,60 +247,53 @@ function createSurveyTemplate(
   icon,
   contentElement,
 ) {
-  const surveyForm = createElement('div', 'survey-form');
-
   // Create progress section
-  const progressDiv = createElement('div', 'progress');
-  const progressTrack = createElement('div', 'progress-track');
-  const progressFill = createElement('div', 'progress-fill');
+  const progressFill = createDiv('progress-fill');
   progressFill.style.width = `${progress}%`;
-  const progressCounter = createElement('div', 'progress-counter', `${questionsCompleted}/${totalActualQuestions}`);
-
-  progressTrack.appendChild(progressFill);
-  progressDiv.appendChild(progressTrack);
-  progressDiv.appendChild(progressCounter);
+  const progressTrack = appendChildren(createDiv('progress-track'), [progressFill]);
+  const progressCounter = createDiv('progress-counter', `${questionsCompleted}/${totalActualQuestions}`);
+  const progressDiv = appendChildren(createDiv('progress'), [progressTrack, progressCounter]);
 
   // Create content section
-  const contentDiv = createElement('div', 'content');
   const sectionTitle = createElement('span', 'section-title', section);
-  const questionIcon = createElement('div', 'question-icon', icon);
+  const questionIcon = createDiv('question-icon', icon);
+  const navDiv = appendChildren(createDiv('nav'), [
+    createButton('btn-back', 'Back'),
+    createButton('btn-next', 'Next'),
+  ]);
+  const contentDiv = appendChildren(createDiv('content'), [
+    sectionTitle,
+    questionIcon,
+    contentElement,
+    navDiv,
+  ]);
 
-  contentDiv.appendChild(sectionTitle);
-  contentDiv.appendChild(questionIcon);
-  contentDiv.appendChild(contentElement);
-
-  // Create navigation
-  const navDiv = createElement('div', 'nav');
-  const backBtn = createElement('button', 'btn-back', 'Back', { type: 'button' });
-  const nextBtn = createElement('button', 'btn-next', 'Next', { type: 'button' });
-
-  navDiv.appendChild(backBtn);
-  navDiv.appendChild(nextBtn);
-  contentDiv.appendChild(navDiv);
-
-  surveyForm.appendChild(progressDiv);
-  surveyForm.appendChild(contentDiv);
-
-  return surveyForm;
+  return appendChildren(createDiv('survey-form'), [progressDiv, contentDiv]);
 }
 
-// Create fact/information slides (non-interactive content)
-function createFactContent(questionData, currentIndex, surveyData) {
-  const {
-    Section, Icon, Title, Question,
-  } = questionData;
-
+// Helper function to extract common question data and progress
+function getQuestionContext(questionData, currentIndex, surveyData) {
+  const { Section, Icon } = questionData;
   const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
     currentIndex,
     surveyData,
   );
+  return {
+    Section, Icon, progress, questionsCompleted, totalActualQuestions,
+  };
+}
 
-  const contentElement = createElement('div');
-  const titleH1 = createElement('h1', 'title', Title);
-  const factP = createElement('p', 'fact-content', Question);
+// Create fact/information slides (non-interactive content)
+function createFactContent(questionData, currentIndex, surveyData) {
+  const { Title, Question } = questionData;
+  const {
+    Section, Icon, progress, questionsCompleted, totalActualQuestions,
+  } = getQuestionContext(questionData, currentIndex, surveyData);
 
-  contentElement.appendChild(titleH1);
-  contentElement.appendChild(factP);
+  const contentElement = appendChildren(createDiv(), [
+    createElement('h1', 'title', Title),
+    createElement('p', 'fact-content', Question),
+  ]);
 
   return createSurveyTemplate(
     progress,
@@ -290,23 +308,22 @@ function createFactContent(questionData, currentIndex, surveyData) {
 // Build interactive question slides (radio buttons, sliders, etc.)
 function createQuestion(questionData, currentIndex, surveyData) {
   const {
-    ContentType, Section, Icon, Title, Question, Options, OptionType, ContentId,
+    ContentType, Title, Question, Options, OptionType, ContentId,
   } = questionData;
 
   if (ContentType === SURVEY_CONSTANTS.FACT_TYPE) {
     return createFactContent(questionData, currentIndex, surveyData);
   }
 
+  const {
+    Section, Icon, progress, questionsCompleted, totalActualQuestions,
+  } = getQuestionContext(questionData, currentIndex, surveyData);
+
   // Find all related questions (q5a, q5b, q5c, etc.)
   const relatedQuestions = findRelatedQuestions(surveyData, currentIndex);
   const hasMultipleQuestions = relatedQuestions.length > 1;
 
-  const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
-    currentIndex,
-    surveyData,
-  );
-
-  const contentElement = createElement('div');
+  const contentElement = createDiv();
 
   // Add title if present
   if (Title) {
@@ -321,7 +338,7 @@ function createQuestion(questionData, currentIndex, surveyData) {
   }
 
   // Create options container
-  const optionsDiv = createElement('div', 'options');
+  const optionsDiv = createDiv('options');
 
   if (OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
     // For radio buttons, only use the first question (no grouping for radio)
@@ -372,12 +389,12 @@ export default function decorate(block) {
 
   // create a survey-area wrapper if missing
   if (!surveyArea && (logo || content)) {
-    surveyArea = createElement('div');
+    surveyArea = createDiv();
     block.prepend(surveyArea);
   }
 
   // apply the survey-area class
-  if (surveyArea) surveyArea.classList.add('survey-area');
+  addClassIf(surveyArea, 'survey-area');
 
   // handle background picture → CSS background
   const bgWrapper = surveyArea?.querySelector(':scope > div:first-child');
@@ -388,7 +405,7 @@ export default function decorate(block) {
     const applyBackgroundAndRemove = () => {
       if (img.currentSrc) {
         surveyArea.style.backgroundImage = `url(${img.currentSrc})`;
-        surveyArea.classList.add('has-background');
+        addClassIf(surveyArea, 'has-background');
       }
       if (bgWrapper && bgWrapper.parentElement) {
         bgWrapper.parentElement.removeChild(bgWrapper);
@@ -411,24 +428,13 @@ export default function decorate(block) {
   }
 
   // move nodes in their original order
-  if (logo) {
-    logo.classList.add('logo');
-    if (surveyArea && logo.parentElement !== surveyArea) {
-      surveyArea.appendChild(logo);
-    }
-  }
-
-  if (content) {
-    content.classList.add('content');
-    if (surveyArea && content.parentElement !== surveyArea) {
-      surveyArea.appendChild(content);
-    }
-  }
+  moveNode(logo, surveyArea, 'logo');
+  moveNode(content, surveyArea, 'content');
 
   // Convert button paragraph to div using consistent approach
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
-    const div = createElement('div');
+    const div = createDiv();
     div.className = buttonContainer.className; // Keep existing classes intact
     // Copy all child nodes safely
     while (buttonContainer.firstChild) {
@@ -491,11 +497,8 @@ export default function decorate(block) {
 
   // Function to attach Get Started button listener
   function attachGetStartedListener() {
-    // Cache DOM query
     const getStartedButton = surveyArea.querySelector('.button-container .button');
-    if (getStartedButton) {
-      getStartedButton.addEventListener('click', handleGetStartedClick);
-    }
+    attachListeners([getStartedButton], 'click', handleGetStartedClick);
   }
 
   // Handle slider input change
@@ -510,25 +513,44 @@ export default function decorate(block) {
     surveyAnswers[questionId] = e.target.value;
   }
 
+  // Validate all related questions before navigation
+  function validateQuestions(relatedQuestions) {
+    const invalidQuestions = relatedQuestions.filter((question) => {
+      const isRequired = isAnswerRequired(question);
+      const hasAnswer = hasValidAnswer(question, surveyAnswers);
+      return isRequired && !hasAnswer;
+    });
+
+    if (invalidQuestions.length > 0) {
+      const questionCount = relatedQuestions.length;
+      const message = questionCount > 1
+        ? `Please select an option for all ${questionCount} questions before continuing.`
+        : 'Please select an option before continuing.';
+      alert(message);
+      return false;
+    }
+    return true;
+  }
+
   // Attach input event listeners
   function attachInputListeners() {
     const currentQuestion = surveyData[currentQuestionIndex];
     const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
 
     if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
-      // Handle all sliders (single or multiple related questions)
       const sliders = surveyArea.querySelectorAll('.slider');
 
       sliders.forEach((slider, index) => {
         const valueDisplay = slider.parentElement.querySelector('.slider-value');
-        const questionData = relatedQuestions[index]; // Dynamic mapping based on related questions
+        const questionData = relatedQuestions[index];
         const options = JSON.parse(slider.dataset.options);
 
+        // Attach event listener
         slider.addEventListener('input', (e) => {
           handleSliderInput(e, options, questionData.ContentId, valueDisplay);
         });
 
-        // Set initial value if answer exists, otherwise set default value
+        // Initialize values
         if (surveyAnswers[questionData.ContentId]) {
           const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
           if (answerIndex !== -1) {
@@ -536,22 +558,19 @@ export default function decorate(block) {
             valueDisplay.textContent = options[answerIndex];
           }
         } else {
-          // Initialize with default slider value (first option)
           const defaultIndex = parseInt(slider.value, 10);
           surveyAnswers[questionData.ContentId] = options[defaultIndex];
         }
       });
     } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
-      // Cache DOM query
       const radioButtons = surveyArea.querySelectorAll(`input[name="${currentQuestion.ContentId}"]`);
 
-      radioButtons.forEach((radio) => {
-        // Use extracted handler function
-        radio.addEventListener('change', (e) => {
-          handleRadioChange(e, currentQuestion.ContentId);
-        });
+      attachListeners(radioButtons, 'change', (e) => {
+        handleRadioChange(e, currentQuestion.ContentId);
+      });
 
-        // Restore previous answer
+      // Restore previous answers
+      radioButtons.forEach((radio) => {
         if (surveyAnswers[currentQuestion.ContentId] === radio.value) {
           radio.checked = true;
         }
@@ -559,49 +578,32 @@ export default function decorate(block) {
     }
   }
 
-  // Handle back button click
-  function handleBackClick() {
-    // Emit custom event instead of direct function call
-    surveyArea.dispatchEvent(new CustomEvent('survey:back'));
-  }
+  // Unified navigation handler
+  function handleNavigation(direction) {
+    if (direction === 'next') {
+      const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
 
-  // Handle next button click
-  function handleNextClick() {
-    const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
-
-    // Validate mandatory fields for all related questions displayed
-    const hasInvalidQuestion = relatedQuestions.some((question) => {
-      const isRequired = isAnswerRequired(question);
-      const hasAnswer = hasValidAnswer(question, surveyAnswers);
-      return isRequired && !hasAnswer;
-    });
-
-    if (hasInvalidQuestion) {
-      const questionCount = relatedQuestions.length;
-      const message = questionCount > 1
-        ? `Please select an option for all ${questionCount} questions before continuing.`
-        : 'Please select an option before continuing.';
-      alert(message);
-      return;
+      if (!validateQuestions(relatedQuestions)) {
+        return;
+      }
     }
 
-    // Emit custom event instead of direct function call
-    surveyArea.dispatchEvent(new CustomEvent('survey:next'));
+    // Emit custom event
+    surveyArea.dispatchEvent(new CustomEvent(`survey:${direction}`));
   }
 
   // Attach navigation event listeners
   function attachNavigationListeners() {
-    // Cache DOM queries
-    const backButton = surveyArea.querySelector('.btn-back');
-    const nextButton = surveyArea.querySelector('.btn-next');
+    const buttons = [
+      { element: surveyArea.querySelector('.btn-back'), direction: 'back' },
+      { element: surveyArea.querySelector('.btn-next'), direction: 'next' },
+    ];
 
-    if (backButton) {
-      backButton.addEventListener('click', handleBackClick);
-    }
-
-    if (nextButton) {
-      nextButton.addEventListener('click', handleNextClick);
-    }
+    buttons.forEach(({ element, direction }) => {
+      if (element) {
+        element.addEventListener('click', () => handleNavigation(direction));
+      }
+    });
   }
 
   // Survey navigation event handlers
@@ -672,5 +674,5 @@ export default function decorate(block) {
     attachGetStartedListener();
   }
 
-  if (footer) footer.classList.add('footer-content');
+  addClassIf(footer, 'footer-content');
 }
