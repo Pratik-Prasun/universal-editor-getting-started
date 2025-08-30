@@ -159,7 +159,7 @@
   font-weight: var(--survey-font-weight-semibold);
   text-decoration: none;
   display: inline-block;
-  font-size: var(--survey-font-size-button);
+  font-size: 16px;
   transition: background-color var(--survey-transition);
 }
 
@@ -179,11 +179,20 @@
 .survey .btn-back {
   background: transparent;
   color: var(--survey-back-button-color);
-  font-size: var(--survey-font-size-medium);
+  font-size: 16px;
   font-weight: var(--survey-font-weight-semibold);
-  padding: var(--survey-button-padding) 0;
-  text-decoration: underline;
+  padding: var(--survey-button-padding) 12px;
+  text-decoration: none;
   transition: opacity var(--survey-transition);
+  border-bottom: 1px solid var(--survey-back-button-color);
+  border-radius: 0;
+  width: 113px;
+}
+
+.survey .btn-back::before {
+  content: "←";
+  margin-right: 26px;
+  font-size: 1.2em;
 }
 
 .survey .btn-back:hover {
@@ -229,8 +238,11 @@
 
 .survey .options {
   flex-wrap: wrap;
-  gap: var(--survey-spacing-small);
+  gap: 1.75rem;
   margin-top: var(--survey-margin-medium);
+  margin-left: 5px;
+  margin-right: 0px;
+  max-width: 1072px;
   justify-content: center;
 }
 
@@ -536,6 +548,7 @@
   justify-content: space-between;
   margin-top: var(--survey-margin-large);
   gap: var(--survey-spacing-small);
+  width: 482px;
 }
 
 .survey .progress-track,
