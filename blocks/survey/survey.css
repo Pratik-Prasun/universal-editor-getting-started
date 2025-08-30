@@ -19,6 +19,8 @@
   --survey-shadow-color: rgba(20, 70, 51, 0.3);
   --survey-white-transparent: rgba(255, 255, 255, 0.1);
   --survey-text-transparent: rgba(20, 70, 51, 0.1);
+  --survey-progress-track-bg: rgba(255, 255, 255, 0.3);
+  --survey-shadow-dark: rgba(0, 0, 0, 0.2);
   
   /* Additional color variables for consistency */
   --survey-back-button-color: #497527;
@@ -39,6 +41,9 @@
   --survey-font-size-large: 1.1rem;
   --survey-font-size-xl: 1.2rem;
   --survey-font-size-xxl: 1.5rem;
+  --survey-font-size-question: 1.75rem; /* 28px for form questions */
+  --survey-font-size-title: 2rem; /* 32px for form titles */
+  --survey-font-size-fact: 1.5rem; /* 24px for fact content */
   --survey-font-size-xxxl: 2.5rem; /* Also used for h1 */
   --survey-font-size-icon: 2rem;
   --survey-font-size-p: 1.75rem;
@@ -302,7 +307,7 @@
   text-align: center;
   background-color: var(--survey-content-background);
   border-radius: var(--survey-border-radius-large) var(--survey-border-radius-large) 0 0; /* Only top corners rounded */
-  padding: var(--survey-spacing-small);
+  padding: 32px;
   margin-top: 0; /* Remove top margin so progress bar isn't pushed */
   max-width: 100%;
 }
@@ -325,7 +330,7 @@
 
 .survey .slider-question {
   color: var(--survey-text-color);
-  font-size: var(--survey-font-size-xl);
+  font-size: var(--survey-font-size-question);
   font-weight: var(--survey-font-weight-semibold);
   margin-bottom: var(--survey-spacing-small);
   text-align: center;
@@ -398,7 +403,7 @@
   border-radius: 8px;
   font-weight: var(--survey-font-weight-semibold);
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--survey-shadow-dark);
   z-index: 10;
   
   /* Move above the slider */
@@ -491,13 +496,13 @@
 }
 
 .survey .survey-form .title {
-  font-size: var(--survey-font-size-xxxl);
+  font-size: var(--survey-font-size-title);
   font-weight: bold;
   line-height: 1.2;
 }
 
 .survey .survey-form .question {
-  font-size: var(--survey-font-size-xxl);
+  font-size: var(--survey-font-size-question);
   font-weight: var(--survey-font-weight-semibold);
 }
 
@@ -509,9 +514,10 @@
 }
 
 .survey .survey-form .fact-content {
-  font-size: var(--survey-font-size-xl);
+  font-size: var(--survey-font-size-fact);
   line-height: 1.6;
   margin: var(--survey-spacing-small) 0;
+  max-width: 864px;
 }
 
 .survey .survey-form .question-icon {
@@ -539,7 +545,7 @@
 
 .survey .progress-track {
   height: var(--survey-progress-height);
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--survey-progress-track-bg);
   overflow: hidden;
   position: relative;
 }
