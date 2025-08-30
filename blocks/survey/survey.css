@@ -298,6 +298,30 @@
   color: var(--survey-white);
 }
 
+/* Error state styles for validation feedback */
+.survey .option.error label {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.survey .survey-form .option.error label {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+/* Ensure hover styles work even in error state */
+.survey .option.error label:hover {
+  background-color: var(--survey-white-transparent);
+  border-color: var(--survey-white);
+  color: var(--survey-white);
+}
+
+.survey .survey-form .option.error label:hover {
+  background-color: var(--survey-text-color);
+  border-color: var(--survey-text-color);
+  color: var(--survey-white);
+}
+
 .survey .progress {
   display: flex;
   flex-direction: column;

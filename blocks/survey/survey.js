@@ -517,11 +517,60 @@ export default function decorate(block) {
 
     // Add the current selection class
     trackWrapper.classList.add(`selected-${selectedIndex}`);
+
+    // Clear error state when user makes a selection
+    trackWrapper.classList.remove('error');
   }
 
   // Handle radio button change
   function handleRadioChange(e, questionId) {
     surveyAnswers[questionId] = e.target.value;
+
+    // Clear error state when user makes a selection
+    const optionDiv = e.target.closest('.option');
+    if (optionDiv) {
+      // Clear error from all options in this question group
+      const allOptions = surveyArea.querySelectorAll(`input[name="${questionId}"]`);
+      allOptions.forEach((option) => {
+        const optDiv = option.closest('.option');
+        if (optDiv) {
+          optDiv.classList.remove('error');
+        }
+      });
+    }
+  }
+
+  // Add visual error state to a question
+  function addErrorState(question) {
+    const currentQuestion = surveyData[currentQuestionIndex];
+
+    if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+      // For radio buttons, find all options for this question
+      const options = surveyArea.querySelectorAll(`input[name="${question.ContentId}"]`);
+      options.forEach((option) => {
+        const optionDiv = option.closest('.option');
+        if (optionDiv) {
+          optionDiv.classList.add('error');
+        }
+      });
+    } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      // For sliders, find the specific slider track wrapper
+      const slider = surveyArea.querySelector(`input[name="${question.ContentId}"]`);
+      if (slider) {
+        const trackWrapper = slider.closest('.slider-track-wrapper');
+        if (trackWrapper) {
+          trackWrapper.classList.add('error');
+        }
+      }
+    }
+  }
+
+  // Clear all error states
+  function clearErrorStates() {
+    const errorElements = surveyArea.querySelectorAll('.option.error, .slider-track-wrapper.error');
+    errorElements.forEach((element) => {
+      element.classList.remove('error');
+    });
   }
 
   // Validate all related questions before navigation
@@ -533,13 +582,19 @@ export default function decorate(block) {
     });
 
     if (invalidQuestions.length > 0) {
-      const questionCount = relatedQuestions.length;
-      const message = questionCount > 1
-        ? `Please select an option for all ${questionCount} questions before continuing.`
-        : 'Please select an option before continuing.';
-      alert(message);
+      // Clear any existing error states
+      clearErrorStates();
+
+      // Add error visual feedback to invalid questions
+      invalidQuestions.forEach((question) => {
+        addErrorState(question);
+      });
+
       return false;
     }
+
+    // Clear error states if validation passes
+    clearErrorStates();
     return true;
   }
 
