@@ -40,7 +40,7 @@
   
   /* Component sizes */
   --survey-icon-size: 80px;
-  --survey-slider-thumb-size: 20px;
+  --survey-slider-thumb-size: 15px;
   --survey-slider-height: 6px;
   --survey-progress-height: 16px;
   --survey-border-small: 4px;
@@ -170,7 +170,6 @@
 }
 
 /* Width utilities */
-.survey .slider-container,
 .survey .slider,
 .survey .progress-track,
 .survey .survey-form .content {
@@ -318,6 +317,19 @@
 /* Slider Styles */
 .survey .slider-container {
   margin: var(--survey-spacing-small) 0;
+  position: relative;
+  width: 1050px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Wrapper for slider track elements only (excludes question title) */
+.survey .slider-track-wrapper {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .survey .slider-question {
@@ -326,6 +338,7 @@
   font-weight: var(--survey-font-weight-semibold);
   margin-bottom: var(--survey-spacing-small);
   text-align: center;
+  width: auto;
 }
 
 .survey .slider-labels {
@@ -335,16 +348,64 @@
   font-size: var(--survey-font-size-small);
   color: var(--survey-text-color);
   font-weight: var(--survey-font-weight-medium);
+  position: relative;
+}
+
+/* Create vertical marks at slider positions */
+.survey .slider-labels::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  margin-top: 8px;
+  width: 2px;
+  height: 26px;
+  background: #333;
+  box-shadow: 
+    173px 0 0 #333,
+    346.5px 0 0 #333,
+    520px 0 0 #333;
+  pointer-events: none;
 }
 
 .survey .slider {
   height: var(--survey-slider-height);
-  border-radius: 3px;
-  background: #ddd;
+  border-radius: 0;
+  background: transparent;
   outline: none;
   margin: var(--survey-margin-half) 0;
+  margin-top: 10px;
+  margin-left: -7.5px;
+  margin-right: -7.5px;
   -webkit-appearance: none;
   appearance: none;
+  position: relative;
+  z-index: 2;
+  width: calc(100% + 15px);
+  box-sizing: border-box;
+}
+
+/* Style the actual slider track */
+.survey .slider::-webkit-slider-track {
+  height: 2px;
+  background: #333;
+  border-radius: 0;
+  border: none;
+}
+
+.survey .slider::-moz-range-track {
+  height: 2px;
+  background: #333;
+  border-radius: 0;
+  border: none;
+}
+
+/* Ensure the slider has a visible background on all browsers */
+.survey .slider {
+  background: linear-gradient(to right, #333 0%, #333 100%);
+  background-size: calc(100% - 15px) 2px;
+  background-position: 7.5px center;
+  background-repeat: no-repeat;
 }
 
 .survey .slider::-webkit-slider-thumb {

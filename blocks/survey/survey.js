@@ -180,7 +180,10 @@ function createSlider(contentId, options, questionText = '') {
 
   const valueDiv = createDiv('slider-value', options[0]);
 
-  elements.push(labelsDiv, slider, valueDiv);
+  // Wrap the track elements (labels, slider input, value) in a constrained wrapper
+  const trackWrapper = appendChildren(createDiv('slider-track-wrapper'), [labelsDiv, slider, valueDiv]);
+
+  elements.push(trackWrapper);
   return appendChildren(createDiv('slider-container'), elements);
 }
 
