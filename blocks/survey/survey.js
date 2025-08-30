@@ -515,13 +515,17 @@ export default function decorate(block) {
             handleSliderInput(e, options, questionData.ContentId, valueDisplay);
           });
 
-          // Set initial value if answer exists
+          // Set initial value if answer exists, otherwise set default value
           if (surveyAnswers[questionData.ContentId]) {
             const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
             if (answerIndex !== -1) {
               slider.value = answerIndex;
               valueDisplay.textContent = options[answerIndex];
             }
+          } else {
+            // Initialize with default slider value (first option)
+            const defaultIndex = parseInt(slider.value, 10);
+            surveyAnswers[questionData.ContentId] = options[defaultIndex];
           }
         });
       } else {
@@ -536,13 +540,17 @@ export default function decorate(block) {
             handleSliderInput(e, options, currentQuestion.ContentId, valueDisplay);
           });
 
-          // Set initial value if answer exists
+          // Set initial value if answer exists, otherwise set default value
           if (surveyAnswers[currentQuestion.ContentId]) {
             const answerIndex = options.indexOf(surveyAnswers[currentQuestion.ContentId]);
             if (answerIndex !== -1) {
               slider.value = answerIndex;
               valueDisplay.textContent = options[answerIndex];
             }
+          } else {
+            // Initialize with default slider value (first option)
+            const defaultIndex = parseInt(slider.value, 10);
+            surveyAnswers[currentQuestion.ContentId] = options[defaultIndex];
           }
         }
       }
