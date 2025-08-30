@@ -20,6 +20,12 @@
   --survey-white-transparent: rgba(255, 255, 255, 0.1);
   --survey-text-transparent: rgba(20, 70, 51, 0.1);
   
+  /* Additional color variables for consistency */
+  --survey-back-button-color: #497527;
+  --survey-form-background: #3D6221;
+  --survey-content-background: #fafafa;
+  --survey-dark-gray: #333;
+  
   /* Spacing variables - consolidated */
   --survey-margin-auto: 0 auto;
   --survey-spacing-small: 1rem; /* Replaces gap-small, padding-small, margin-small */
@@ -62,18 +68,44 @@
   padding: var(--survey-padding);
   background: no-repeat center / cover;
   color: var(--survey-white);
-  box-sizing: border-box;
   font-family: helvetica;
   line-height: 1.2;
   min-height: 500px;
   background-position: center center;
 }
 
+.survey-area,
+.survey .survey-form,
+.survey .survey-form .content,
+.survey .slider-track-wrapper,
+.survey .slider {
+  box-sizing: border-box;
+}
+
+.survey .button,
+.survey .btn-next,
+.survey .btn-back,
+.survey .option input[type="radio"],
+.survey .option label,
+.survey .slider::-webkit-slider-thumb,
+.survey .slider::-moz-range-thumb {
+  cursor: pointer;
+}
+
+.survey .button,
+.survey .btn-next,
+.survey .btn-back,
+.survey .slider::-webkit-slider-track,
+.survey .slider::-moz-range-track,
+.survey .slider::-webkit-slider-thumb,
+.survey .slider::-moz-range-thumb {
+  border: none;
+}
+
 .survey-area:has(> .survey-form) {
   padding: 0;
 }
 
-/* Flexbox layout utilities */
 .survey .content,
 .survey .survey-form .content,
 .survey .options,
@@ -92,7 +124,6 @@
   align-items: center;
 }
 
-/* Content layout */
 .survey .content {
   gap: var(--survey-spacing-small);
   order: 1; /* content on left */
@@ -107,25 +138,14 @@
   width: auto;
 }
 
-/* Content typography */
 .survey .content p {
   font-size: var(--survey-font-size-p);
-}
-
-.survey .content h1,
-.survey .content h5 {
-  margin: 0 0 8px;
 }
 
 .survey .content h1 {
   font-size: var(--survey-font-size-xxxl);
 }
 
-.survey .content h5 {
-  font-size: var(--survey-font-size-xxl);
-}
-
-/* Base button styles - shared by all buttons */
 .survey .button,
 .survey .btn-next {
   background-color: var(--survey-primary-color) !important;
@@ -133,8 +153,6 @@
   border-radius: var(--survey-border-radius);
   font-weight: var(--survey-font-weight-semibold);
   text-decoration: none;
-  border: none;
-  cursor: pointer;
   display: inline-block;
   font-size: var(--survey-font-size-button);
   transition: background-color var(--survey-transition);
@@ -155,11 +173,9 @@
 
 .survey .btn-back {
   background: transparent;
-  border: none;
-  color: #497527;
+  color: var(--survey-back-button-color);
   font-size: var(--survey-font-size-medium);
   font-weight: var(--survey-font-weight-semibold);
-  cursor: pointer;
   padding: var(--survey-button-padding) 0;
   text-decoration: underline;
   transition: opacity var(--survey-transition);
@@ -169,35 +185,26 @@
   color: var(--survey-text-color)
 }
 
-/* Width utilities */
 .survey .slider,
 .survey .progress-track,
 .survey .survey-form .content {
   width: 100%;
 }
 
-/* Max-width utilities */
 .survey,
 .survey-area,
 .survey .survey-form {
   max-width: var(--survey-max-width);
 }
 
-/* Margin utilities */
 .survey,
 .survey-area,
 .survey .survey-form,
-.survey .footer-content {
+.survey .footer-content,
+.survey .footer-content p {
   margin: var(--survey-margin-auto);
 }
 
-/* Horizontal centering utilities */
-.survey .footer-content p {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Circular border-radius utilities */
 .survey .slider::-webkit-slider-thumb,
 .survey .slider::-moz-range-thumb,
 .survey .survey-form .question-icon {
@@ -215,7 +222,6 @@
   height: auto;
 }
 
-/* Options Styling */
 .survey .options {
   flex-wrap: wrap;
   gap: var(--survey-spacing-small);
@@ -231,10 +237,8 @@
 .survey .option input[type="radio"] {
   position: absolute;
   opacity: 0;
-  cursor: pointer;
 }
 
-/* Base option label styles */
 .survey .option label {
   display: inline-block;
   padding: var(--survey-option-padding);
@@ -243,14 +247,12 @@
   border-radius: var(--survey-border-radius);
   font-weight: var(--survey-font-weight-medium);
   font-size: var(--survey-font-size-medium);
-  cursor: pointer;
   transition: all var(--survey-transition);
   text-align: center;
   min-width: var(--survey-option-min-width);
   white-space: nowrap;
 }
 
-/* Default theme - white on dark background */
 .survey .option label {
   border-color: var(--survey-white);
   color: var(--survey-white);
@@ -267,24 +269,18 @@
   box-shadow: 0 var(--survey-border-small) 12px var(--survey-shadow-color);
 }
 
-/* Survey form theme - dark on light background */
 .survey .survey-form .option label {
   color: var(--survey-text-color);
   border-color: var(--survey-text-color);
 }
 
-.survey .survey-form .option label:hover {
-  background-color: var(--survey-text-color);
-  color: var(--survey-white);
-}
-
+.survey .survey-form .option label:hover,
 .survey .survey-form .option input[type="radio"]:checked + label {
   background-color: var(--survey-text-color);
   border-color: var(--survey-text-color);
   color: var(--survey-white);
 }
 
-/* Progress Bar Styling */
 .survey .progress {
   display: flex;
   flex-direction: column;
@@ -293,48 +289,38 @@
   padding: 0 var(--survey-spacing-small);
 }
 
-/* Survey Form Container */
 .survey .survey-form {
   grid-column: 1 / -1; /* Span both columns when inside survey-area */
   padding: 0;
-  background: #3D6221;
+  background: var(--survey-form-background);
   color: var(--survey-white);
-  box-sizing: border-box;
   width: 100%;
 }
 
 .survey .survey-form .content {
   gap: var(--survey-gap-medium);
   text-align: center;
-  background-color: #fafafa;
+  background-color: var(--survey-content-background);
   border-radius: var(--survey-border-radius-large) var(--survey-border-radius-large) 0 0; /* Only top corners rounded */
   padding: var(--survey-spacing-small);
   margin-top: 0; /* Remove top margin so progress bar isn't pushed */
   max-width: 100%;
-  box-sizing: border-box;
 }
 
-/* Slider Styles */
 .survey .slider-container {
-  margin: var(--survey-spacing-small) 0;
+  margin: var(--survey-spacing-small) auto 0;
   position: relative;
   width: 1050px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-/* Wrapper for slider track elements only (excludes question title) */
 .survey .slider-track-wrapper {
   width: 730px;
   height: 228px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 20px auto 0;
   position: relative;
-  box-sizing: border-box;
-  border: 2px solid #333;
+  border: 2px solid var(--survey-dark-gray);
   border-radius: 20px;
   padding: 70px 105px;
-  margin-top: 20px;
 }
 
 .survey .slider-question {
@@ -393,15 +379,14 @@
   margin-top: 8px;
   width: 2px;
   height: 26px;
-  background: #333;
+  background: var(--survey-dark-gray);
   box-shadow: 
-    172px 0 0 #333,
-    344px 0 0 #333,
-    516px 0 0 #333;
+    172px 0 0 var(--survey-dark-gray),
+    344px 0 0 var(--survey-dark-gray),
+    516px 0 0 var(--survey-dark-gray);
   pointer-events: none;
 }
 
-/* When a selection is made, transform the selected label into a yellow dialog */
 .survey .slider-track-wrapper.selected-0 .slider-labels span:nth-child(1),
 .survey .slider-track-wrapper.selected-1 .slider-labels span:nth-child(2),
 .survey .slider-track-wrapper.selected-2 .slider-labels span:nth-child(3),
@@ -420,7 +405,6 @@
   top: -40px;
 }
 
-/* Speech bubble pointer for selected labels only */
 .survey .slider-track-wrapper.selected-0 .slider-labels span:nth-child(1)::after,
 .survey .slider-track-wrapper.selected-1 .slider-labels span:nth-child(2)::after,
 .survey .slider-track-wrapper.selected-2 .slider-labels span:nth-child(3)::after,
@@ -448,27 +432,22 @@
   position: relative;
   z-index: 2;
   width: calc(100% + 15px);
-  box-sizing: border-box;
 }
 
-/* Style the actual slider track */
 .survey .slider::-webkit-slider-track {
   height: 2px;
-  background: #333;
+  background: var(--survey-dark-gray);
   border-radius: 0;
-  border: none;
 }
 
 .survey .slider::-moz-range-track {
   height: 2px;
-  background: #333;
+  background: var(--survey-dark-gray);
   border-radius: 0;
-  border: none;
 }
 
-/* Ensure the slider has a visible background on all browsers */
 .survey .slider {
-  background: linear-gradient(to right, #333 0%, #333 100%);
+  background: linear-gradient(to right, var(--survey-dark-gray) 0%, var(--survey-dark-gray) 100%);
   background-size: calc(100% - 15px) 2px;
   background-position: 7.5px center;
   background-repeat: no-repeat;
@@ -481,8 +460,6 @@
   height: var(--survey-slider-thumb-size);
   background: var(--survey-primary-color);
   border-radius: 50%;
-  cursor: pointer;
-  border: none;
 }
 
 .survey .slider::-moz-range-thumb {
@@ -490,17 +467,27 @@
   height: var(--survey-slider-thumb-size);
   background: var(--survey-primary-color);
   border-radius: 50%;
-  cursor: pointer;
-  border: none;
 }
 
-/* Typography styles */
+.survey .content h1,
+.survey .content h5,
+.survey .survey-form .title,
+.survey .survey-form .question,
+.survey .survey-form .section-title,
+.survey .survey-form .fact-content {
+  margin: 0;
+}
+
+.survey .content h1,
+.survey .content h5 {
+  margin-bottom: 8px;
+}
+
 .survey .survey-form .title,
 .survey .survey-form .question,
 .survey .survey-form .section-title,
 .survey .survey-form .fact-content {
   color: var(--survey-text-color);
-  margin: 0;
 }
 
 .survey .survey-form .title {
@@ -539,14 +526,12 @@
   margin: var(--survey-spacing-small) 0;
 }
 
-/* Navigation Styling */
 .survey .nav {
   justify-content: space-between;
   margin-top: var(--survey-margin-large);
   gap: var(--survey-spacing-small);
 }
 
-/* Progress Bar Styling */
 .survey .progress-track,
 .survey .progress-fill {
   border-radius: calc(var(--survey-progress-height) / 2);
@@ -573,7 +558,6 @@
   text-align: left;
 }
 
-/* Footer styling */
 .survey .footer-content {
   color: #000;
   padding: var(--survey-spacing-small);
