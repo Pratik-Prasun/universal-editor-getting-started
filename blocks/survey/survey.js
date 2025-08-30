@@ -178,10 +178,8 @@ function createSlider(contentId, options, questionText = '') {
     'data-options': JSON.stringify(options),
   });
 
-  const valueDiv = createDiv('slider-value', options[0]);
-
-  // Wrap the track elements (labels, slider input, value) in a constrained wrapper
-  const trackWrapper = appendChildren(createDiv('slider-track-wrapper'), [labelsDiv, slider, valueDiv]);
+  // Wrap the track elements (labels, slider input) in a constrained wrapper
+  const trackWrapper = appendChildren(createDiv('slider-track-wrapper'), [labelsDiv, slider]);
 
   elements.push(trackWrapper);
   return appendChildren(createDiv('slider-container'), elements);
@@ -505,9 +503,8 @@ export default function decorate(block) {
   }
 
   // Handle slider input change
-  function handleSliderInput(e, options, questionId, valueDisplay) {
+  function handleSliderInput(e, options, questionId) {
     const selectedIndex = parseInt(e.target.value, 10);
-    valueDisplay.textContent = options[selectedIndex];
     surveyAnswers[questionId] = options[selectedIndex];
 
     // Update CSS class to show the correct dialog
@@ -555,14 +552,13 @@ export default function decorate(block) {
       const sliders = surveyArea.querySelectorAll('.slider');
 
       sliders.forEach((slider, index) => {
-        const valueDisplay = slider.parentElement.querySelector('.slider-value');
         const trackWrapper = slider.parentElement;
         const questionData = relatedQuestions[index];
         const options = JSON.parse(slider.dataset.options);
 
         // Attach event listener
         slider.addEventListener('input', (e) => {
-          handleSliderInput(e, options, questionData.ContentId, valueDisplay);
+          handleSliderInput(e, options, questionData.ContentId);
         });
 
         // Initialize values and CSS classes
@@ -570,14 +566,14 @@ export default function decorate(block) {
           const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
           if (answerIndex !== -1) {
             slider.value = answerIndex;
-            valueDisplay.textContent = options[answerIndex];
-            // Only add selected class if user previously made a selection
+            // Add selected class for previously made selection
             trackWrapper.classList.add(`selected-${answerIndex}`);
           }
         } else {
           const defaultIndex = parseInt(slider.value, 10);
           surveyAnswers[questionData.ContentId] = options[defaultIndex];
-          // Don't add selected class for default - show regular labels instead
+          // Add selected class for default value too since slider shows it as selected
+          trackWrapper.classList.add(`selected-${defaultIndex}`);
         }
       });
     } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {

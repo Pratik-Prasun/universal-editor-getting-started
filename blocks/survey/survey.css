@@ -494,14 +494,6 @@
   border: none;
 }
 
-.survey .slider-value {
-  text-align: center;
-  font-weight: var(--survey-font-weight-semibold);
-  color: var(--survey-text-color);
-  margin-top: var(--survey-margin-half);
-  font-size: var(--survey-font-size-medium);
-}
-
 /* Typography styles */
 .survey .survey-form .title,
 .survey .survey-form .question,
