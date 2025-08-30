@@ -342,13 +342,34 @@
 }
 
 .survey .slider-labels {
-  display: flex;
-  justify-content: space-between;
+  display: block;
   margin-bottom: var(--survey-margin-half);
   font-size: var(--survey-font-size-small);
   color: var(--survey-text-color);
   font-weight: var(--survey-font-weight-medium);
   position: relative;
+  height: 20px;
+}
+
+.survey .slider-labels span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.survey .slider-labels span:nth-child(1) {
+  left: 0px;
+}
+
+.survey .slider-labels span:nth-child(2) {
+  left: 173px;
+}
+
+.survey .slider-labels span:nth-child(3) {
+  left: 346.5px;
+}
+
+.survey .slider-labels span:nth-child(4) {
+  left: 520px;
 }
 
 /* Create vertical marks at slider positions */
@@ -416,7 +437,7 @@
   background: var(--survey-primary-color);
   border-radius: 50%;
   cursor: pointer;
-  border: 2px solid var(--survey-text-color);
+  border: none;
 }
 
 .survey .slider::-moz-range-thumb {
@@ -425,7 +446,7 @@
   background: var(--survey-primary-color);
   border-radius: 50%;
   cursor: pointer;
-  border: 2px solid var(--survey-text-color);
+  border: none;
 }
 
 .survey .slider-value {
