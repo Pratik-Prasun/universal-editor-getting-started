@@ -606,6 +606,39 @@ export default function decorate(block) {
     });
   }
 
+  // Helper function to find the start of a question group
+  function findGroupStart(startIndex) {
+    let index = startIndex;
+    const targetQuestion = surveyData[index];
+    const targetBaseId = targetQuestion.ContentId.replace(/[a-z]$/, '');
+
+    // If not a grouped question, return as-is
+    if (targetBaseId === targetQuestion.ContentId) {
+      return index;
+    }
+
+    // Find the first question in the group
+    while (index > 0) {
+      const prevQ = surveyData[index - 1];
+      const prevBaseId = prevQ.ContentId.replace(/[a-z]$/, '');
+
+      if (prevBaseId === targetBaseId && prevBaseId !== prevQ.ContentId) {
+        index -= 1;
+      } else {
+        break;
+      }
+    }
+
+    return index;
+  }
+
+  // Helper function to calculate next question index
+  function getNextQuestionIndex() {
+    const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
+    const questionsToSkip = relatedQuestions.length - 1;
+    return currentQuestionIndex + 1 + questionsToSkip;
+  }
+
   // Survey navigation event handlers
   if (surveyArea) {
     // Handle back navigation
@@ -616,48 +649,14 @@ export default function decorate(block) {
         surveyArea.innerHTML = originalContent;
         attachGetStartedListener();
       } else {
-        // Find the start of the previous question group
-        let prevIndex = currentQuestionIndex - 1;
-
-        // Get the base ID of the question we're backing to
-        const targetQuestion = surveyData[prevIndex];
-        const targetBaseId = targetQuestion.ContentId.replace(/[a-z]$/, '');
-
-        // If it's a grouped question (has letter suffix), find the first in the group
-        if (targetBaseId !== targetQuestion.ContentId) {
-          // Keep going back to find the first question in this group (q5a, not q5b or q5c)
-          while (prevIndex > 0) {
-            const currentQ = surveyData[prevIndex];
-            const baseId = currentQ.ContentId.replace(/[a-z]$/, '');
-
-            // Check if the previous question also belongs to the same group
-            if (prevIndex > 0) {
-              const prevQ = surveyData[prevIndex - 1];
-              const prevBaseId = prevQ.ContentId.replace(/[a-z]$/, '');
-
-              // If previous question has same base ID, keep going back
-              if (prevBaseId === baseId && prevBaseId !== prevQ.ContentId) {
-                prevIndex -= 1;
-              } else {
-                break; // Found the start of the group
-              }
-            } else {
-              break; // We're at index 0
-            }
-          }
-        }
-
+        const prevIndex = findGroupStart(currentQuestionIndex - 1);
         showQuestion(prevIndex);
       }
     });
 
     // Handle next/forward navigation
     surveyArea.addEventListener('survey:next', () => {
-      const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
-      // Skip additional related questions since they were displayed together
-      const questionsToSkip = relatedQuestions.length - 1;
-
-      const nextIndex = currentQuestionIndex + 1 + questionsToSkip;
+      const nextIndex = getNextQuestionIndex();
 
       if (nextIndex < surveyData.length) {
         showQuestion(nextIndex);
