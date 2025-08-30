@@ -356,9 +356,16 @@
   height: 20px;
 }
 
+/* Default regular label styling */
 .survey .slider-labels span {
   position: absolute;
   transform: translateX(-50%);
+  font-size: var(--survey-font-size-small);
+  color: var(--survey-text-color);
+  font-weight: var(--survey-font-weight-medium);
+  /* Visible by default - no transitions for immediate response */
+  opacity: 1;
+  visibility: visible;
 }
 
 .survey .slider-labels span:nth-child(1) {
@@ -392,6 +399,39 @@
     344px 0 0 #333,
     516px 0 0 #333;
   pointer-events: none;
+}
+
+/* When a selection is made, transform the selected label into a yellow dialog */
+.survey .slider-track-wrapper.selected-0 .slider-labels span:nth-child(1),
+.survey .slider-track-wrapper.selected-1 .slider-labels span:nth-child(2),
+.survey .slider-track-wrapper.selected-2 .slider-labels span:nth-child(3),
+.survey .slider-track-wrapper.selected-3 .slider-labels span:nth-child(4) {
+  /* Transform into yellow dialog box */
+  background-color: var(--survey-primary-color);
+  color: var(--survey-text-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: var(--survey-font-weight-semibold);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  
+  /* Move above the slider */
+  top: -60px;
+}
+
+/* Speech bubble pointer for selected labels only */
+.survey .slider-track-wrapper.selected-0 .slider-labels span:nth-child(1)::after,
+.survey .slider-track-wrapper.selected-1 .slider-labels span:nth-child(2)::after,
+.survey .slider-track-wrapper.selected-2 .slider-labels span:nth-child(3)::after,
+.survey .slider-track-wrapper.selected-3 .slider-labels span:nth-child(4)::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: var(--survey-primary-color);
 }
 
 .survey .slider {

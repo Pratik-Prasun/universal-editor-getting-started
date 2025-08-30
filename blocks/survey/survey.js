@@ -509,6 +509,17 @@ export default function decorate(block) {
     const selectedIndex = parseInt(e.target.value, 10);
     valueDisplay.textContent = options[selectedIndex];
     surveyAnswers[questionId] = options[selectedIndex];
+
+    // Update CSS class to show the correct dialog
+    const trackWrapper = e.target.parentElement;
+
+    // Remove all previous selection classes
+    for (let i = 0; i < options.length; i += 1) {
+      trackWrapper.classList.remove(`selected-${i}`);
+    }
+
+    // Add the current selection class
+    trackWrapper.classList.add(`selected-${selectedIndex}`);
   }
 
   // Handle radio button change
@@ -545,6 +556,7 @@ export default function decorate(block) {
 
       sliders.forEach((slider, index) => {
         const valueDisplay = slider.parentElement.querySelector('.slider-value');
+        const trackWrapper = slider.parentElement;
         const questionData = relatedQuestions[index];
         const options = JSON.parse(slider.dataset.options);
 
@@ -553,16 +565,19 @@ export default function decorate(block) {
           handleSliderInput(e, options, questionData.ContentId, valueDisplay);
         });
 
-        // Initialize values
+        // Initialize values and CSS classes
         if (surveyAnswers[questionData.ContentId]) {
           const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
           if (answerIndex !== -1) {
             slider.value = answerIndex;
             valueDisplay.textContent = options[answerIndex];
+            // Only add selected class if user previously made a selection
+            trackWrapper.classList.add(`selected-${answerIndex}`);
           }
         } else {
           const defaultIndex = parseInt(slider.value, 10);
           surveyAnswers[questionData.ContentId] = options[defaultIndex];
+          // Don't add selected class for default - show regular labels instead
         }
       });
     } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
