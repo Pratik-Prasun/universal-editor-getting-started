@@ -730,9 +730,16 @@ export default function decorate(block) {
       if (nextIndex < surveyData.length) {
         showQuestion(nextIndex);
       } else {
-        // Survey complete
+        // Survey complete - add "Complete!" span above progress bar
+        const progressDiv = surveyArea.querySelector('.progress');
+        if (progressDiv) {
+          // Check if "Complete!" span doesn't already exist
+          if (!progressDiv.querySelector('.progress-complete')) {
+            const completeSpan = createElement('span', 'progress-complete', 'Complete!');
+            progressDiv.insertBefore(completeSpan, progressDiv.firstChild);
+          }
+        }
         console.log('Survey completed:', surveyAnswers);
-        alert('Survey completed! Check console for answers.');
       }
     });
   }
