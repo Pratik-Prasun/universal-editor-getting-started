@@ -247,6 +247,7 @@
   padding: 32px;
   margin-top: 0; /* Remove top margin so progress bar isn't pushed */
   max-width: 100%;
+  min-height: 555px;
 }
 
 .survey .options {
@@ -349,12 +350,17 @@
   padding: 0 var(--survey-spacing-small);
 }
 
+.survey .survey-form .progress {
+  min-height: 42px;
+}
+
 .survey .survey-form {
   grid-column: 1 / -1; /* Span both columns when inside survey-area */
   padding: 0;
   background: var(--survey-form-background);
   color: var(--survey-white);
   width: 100%;
+  min-height: 600px;
 }
 
 .survey .slider-container {
@@ -638,6 +644,20 @@
   text-decoration: underline;
   text-decoration-color: var(--survey-back-button-color);
   text-underline-offset: 6px;
+}
+
+.survey .survey-form .answers-title,
+.survey .survey-form .answers-subtitle {
+  color: #144633 !important;
+  max-width: 633px;
+}
+
+.survey .survey-form .answers-title {
+  font-size: 32px !important;
+}
+
+.survey .survey-form .answers-subtitle {
+  font-size: 16px !important;
 }
 
 @media (width <= 768px) {

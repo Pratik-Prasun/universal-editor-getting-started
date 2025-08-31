@@ -740,6 +740,26 @@ export default function decorate(block) {
           }
         }
 
+        // Replace content with answers summary
+        const contentDiv = surveyArea.querySelector('.content');
+        if (contentDiv) {
+          // Create answers summary content
+          const answersHeading = createElement('h1', 'answers-title', 'Your Answers');
+          const subtitleText = createElement(
+            'p',
+            'answers-subtitle',
+            'Be sure to save your answers below to share with your healthcare provider. Ask your healthcare provider about adding REXULTI to your antidepressant—an open conversation may help get you where you want to be.',
+          );
+
+          const answersContent = appendChildren(createDiv(), [
+            answersHeading,
+            subtitleText,
+          ]);
+
+          // Replace the content
+          replaceContent(contentDiv, answersContent);
+        }
+
         // Show footer content after survey completion
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
