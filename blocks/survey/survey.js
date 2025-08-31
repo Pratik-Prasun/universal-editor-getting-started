@@ -375,6 +375,48 @@ function createQuestion(questionData, currentIndex, surveyData) {
   );
 }
 
+// Build the answers summary as a semantic UL/LI list
+function createAnswersListUL(surveyData, surveyAnswers) {
+  // Filter only counted questions (e.g., 6/6)
+  const countedQuestions = surveyData.filter(
+    (q) => q.CountsAsQuestion === 'TRUE' && q.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE,
+  );
+  const total = countedQuestions.length;
+
+  const ul = document.createElement('ul');
+  ul.classList.add('answers-list__list');
+
+  countedQuestions.forEach((q, index) => {
+    const answerValue = surveyAnswers[q.ContentId];
+
+    const li = document.createElement('li');
+    li.classList.add('answers-list__list--item');
+
+    const sectionSpan = createElement('span', '', q.Section || '');
+
+    const contentWrap = createDiv('answers-list__content answer-item');
+    const desc = createDiv('answer-item--description');
+    const ordinal = createElement('span', '', `Answer ${index + 1}/${total}`);
+
+    // Generic, safe summary: "You selected: <value>."
+    const sentenceDiv = document.createElement('div');
+    const sPrefix = document.createTextNode('You selected: ');
+    const strong = createElement('strong', '', String(answerValue || '—'));
+    const sSuffix = document.createTextNode('.');
+    appendChildren(sentenceDiv, [sPrefix, strong, sSuffix]);
+
+    appendChildren(desc, [ordinal, sentenceDiv]);
+
+    const iconDiv = createDiv(`slide-${index + 1} answer-item--icon`, q.Icon || '💡');
+
+    appendChildren(contentWrap, [desc, iconDiv]);
+    appendChildren(li, [sectionSpan, contentWrap]);
+    ul.appendChild(li);
+  });
+
+  return ul;
+}
+
 export default function decorate(block) {
   if (!block) return;
 
@@ -740,24 +782,27 @@ export default function decorate(block) {
           }
         }
 
-        // Replace content with answers summary
+        // Replace content with answers summary (UL/LI structure)
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
-          // Create answers summary content
+          // Create header wrapper with title and subtitle
+          const header = createDiv('answers-list-header');
           const answersHeading = createElement('h1', 'answers-title', 'Your Answers');
           const subtitleText = createElement(
             'p',
             'answers-subtitle',
             'Be sure to save your answers below to share with your healthcare provider. Ask your healthcare provider about adding REXULTI to your antidepressant—an open conversation may help get you where you want to be.',
           );
+          appendChildren(header, [answersHeading, subtitleText]);
 
-          const answersContent = appendChildren(createDiv(), [
-            answersHeading,
-            subtitleText,
-          ]);
+          // Build semantic UL/LI answers list
+          const listEl = createAnswersListUL(surveyData, surveyAnswers);
+          const answersList = createDiv('answers-list');
+          if (listEl) answersList.appendChild(listEl);
 
-          // Replace the content
-          replaceContent(contentDiv, answersContent);
+          // Compose and replace content
+          const container = appendChildren(createDiv(), [header, answersList]);
+          replaceContent(contentDiv, container);
         }
 
         // Show footer content after survey completion

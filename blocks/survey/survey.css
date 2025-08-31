@@ -660,6 +660,116 @@
   font-size: 16px !important;
 }
 
+/* Answers grid (minimal, scoped) */
+/* Header wrapper used by current JS */
+.survey .survey-form .answers-list-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* BEM-style answers list (UL/LI structure) */
+.survey .survey-form .answers-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.survey .survey-form .answers-list__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.survey .survey-form .answers-list__header h2,
+.survey .survey-form .answers-list__header p {
+  color: #144633 !important;
+  max-width: 633px;
+}
+
+.survey .survey-form .answers-list__header h2 {
+  font-size: 32px !important;
+  margin: 0;
+}
+
+.survey .survey-form .answers-list__header p {
+  font-size: 16px !important;
+  margin: 0;
+}
+
+.survey .survey-form .answers-list__list {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1120px;
+}
+
+.survey .survey-form .answers-list__list--item > span {
+  display: block;
+  background: var(--survey-text-color);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 10px 10px 0 0;
+}
+
+.survey .survey-form .answers-list__content.answer-item {
+  background: #fff;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 16px 20px;
+}
+
+.survey .survey-form .answer-item--description {
+  display: flex;
+  flex-direction: column;
+}
+
+.survey .survey-form .answer-item--description > span {
+  color: var(--survey-text-color);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.survey .survey-form .answer-item--description div {
+  color: #333;
+}
+
+.survey .survey-form .answer-item--icon {
+  width: 56px;
+  height: 56px;
+  background: var(--survey-primary-color);
+  color: var(--survey-text-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+@media (width <= 1024px) {
+  .survey .survey-form .answers-list__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 640px) {
+  .survey .survey-form .answers-list__list {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (width <= 768px) {
   .survey-area {
     grid-template-columns: 1fr;
