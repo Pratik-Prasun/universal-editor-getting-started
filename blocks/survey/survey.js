@@ -739,6 +739,36 @@ export default function decorate(block) {
             progressDiv.insertBefore(completeSpan, progressDiv.firstChild);
           }
         }
+
+        // Show footer content after survey completion
+        const footerDiv = block.querySelector('.footer-content');
+        if (footerDiv) {
+          // Create thank you message
+          const thankYouMessage = createElement('p', 'survey-thank-you', 'Thank you for completing this Depression Journey Questionnaire.');
+
+          // Create save answers button
+          const saveButton = createButton('button', 'Save Your Answers');
+          saveButton.id = 'save-answers';
+
+          // Create learn more link
+          const learnMoreLink = createElement('a', 'survey-learn-more', 'Learn more about depression and Partial Response', {
+            href: '#',
+          });
+          const learnMoreParagraph = createElement('p');
+          learnMoreParagraph.appendChild(learnMoreLink);
+
+          // Insert new elements at the beginning of footer
+          const footerContentDiv = footerDiv.querySelector('div');
+          if (footerContentDiv) {
+            footerContentDiv.insertBefore(thankYouMessage, footerContentDiv.firstChild);
+            footerContentDiv.appendChild(saveButton);
+            footerContentDiv.appendChild(learnMoreParagraph);
+          }
+
+          // Make footer visible
+          footerDiv.style.display = 'block';
+        }
+
         console.log('Survey completed:', surveyAnswers);
       }
     });

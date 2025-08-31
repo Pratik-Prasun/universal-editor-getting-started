@@ -615,12 +615,29 @@
 }
 
 .survey .footer-content p {
-  margin-bottom: var(--survey-spacing-small);
+  margin-bottom: 1.5rem;
   max-width: var(--survey-footer-content-max-width);
 }
 
 .survey .footer-content p:last-child {
   margin-bottom: 0;
+}
+
+.survey .footer-content .survey-thank-you {
+  margin-bottom: 0;
+}
+
+.survey .survey-learn-more {
+  color: var(--survey-back-button-color);
+  text-decoration: underline;
+  text-decoration-color: var(--survey-back-button-color);
+  text-underline-offset: 6px;
+}
+
+.survey .survey-learn-more:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--survey-back-button-color);
+  text-underline-offset: 6px;
 }
 
 @media (width <= 768px) {
