@@ -63,6 +63,9 @@
   --survey-margin-half: 0.5rem;
   --survey-border-radius-large: 24px;
   --survey-footer-content-max-width: 832px;
+  
+  /* Answers completion card sizing */
+  --answer-card-min-height: 277px; /* Approx height seen in tooling for a single card */
 }
 
 .survey-area {
@@ -711,29 +714,42 @@
   max-width: 1120px;
 }
 
+/* Make each list item behave like a unified card with consistent height */
+.survey .survey-form .answers-list__list--item {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--answer-card-min-height);
+  border-radius: 10px; /* unify rounding across top/bottom */
+  overflow: hidden; /* ensure top bar + body share rounded corners */
+  background: #fff; /* base card background */
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%); /* card-level shadow */
+}
+
 .survey .survey-form .answers-list__list--item > span {
   display: block;
-  background: var(--survey-text-color);
+  background: #497527; /* top bar color per spec */
   color: #fff;
   font-weight: 700;
   text-align: center;
-  padding: 8px 12px;
+  padding: 10px 14px; /* slightly larger for better touch/visual rhythm */
   border-radius: 10px 10px 0 0;
 }
 
 .survey .survey-form .answers-list__content.answer-item {
   background: #fff;
-  border-radius: 0 0 10px 10px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  border-radius: 0; /* wrapper handles rounding */
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  padding: 16px 20px;
+  column-gap: 16px; /* space between text and icon */
+  padding: 20px 24px; /* more breathing room */
+  flex: 1 1 auto; /* fill remaining height for consistent card size */
 }
 
 .survey .survey-form .answer-item--description {
   display: flex;
   flex-direction: column;
+  gap: 8px; /* space between ordinal and text */
 }
 
 .survey .survey-form .answer-item--description > span {
@@ -744,6 +760,14 @@
 
 .survey .survey-form .answer-item--description div {
   color: #333;
+}
+
+/* normalize paragraphs if present in multi-line answers */
+.survey .survey-form .answer-item--description p {
+  margin: 0 0 6px;
+}
+.survey .survey-form .answer-item--description p:last-child {
+  margin-bottom: 0;
 }
 
 .survey .survey-form .answer-item--icon {
