@@ -495,8 +495,31 @@ function createAnswersListUL(surveyData, surveyAnswers) {
     group.forEach((q) => {
       const answerValue = surveyAnswers[q.ContentId];
       const formattedAnswer = formatAnswerFromTemplate(q, answerValue);
-      const sentenceDiv = document.createElement('div');
-      sentenceDiv.innerHTML = formattedAnswer;
+      const sentenceDiv = createElement('div');
+
+      // Handle known safe HTML patterns or fallback to text
+      if (formattedAnswer.includes('<strong>') && formattedAnswer.includes('</strong>')) {
+        // Parse simple <strong> tags safely
+        const parts = formattedAnswer.split('<strong>');
+        parts.forEach((part, partIndex) => {
+          if (partIndex === 0) {
+            if (part) sentenceDiv.appendChild(document.createTextNode(part));
+          } else {
+            const [strongText, afterStrong] = part.split('</strong>');
+            if (strongText) {
+              const strongEl = createElement('strong', '', strongText);
+              sentenceDiv.appendChild(strongEl);
+            }
+            if (afterStrong) {
+              sentenceDiv.appendChild(document.createTextNode(afterStrong));
+            }
+          }
+        });
+      } else {
+        // No HTML tags, use as plain text
+        sentenceDiv.textContent = formattedAnswer;
+      }
+
       answersContainer.appendChild(sentenceDiv);
     });
 
