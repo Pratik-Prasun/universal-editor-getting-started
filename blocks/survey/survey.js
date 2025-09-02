@@ -1,17 +1,13 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
 
-/**
- * Survey Block - Interactive Survey Component for AEM Edge Delivery Services
- *
- * This module handles dynamic survey rendering with support for:
- * - Multiple question types (radio, slider, fact cards)
- * - Progress tracking and navigation
- * - Related question grouping
- * - Secure DOM manipulation without innerHTML risks
- */
+/*
+  Survey block for AEM Edge Delivery Services.
+  Radios, sliders, and read-only "fact" slides.
+  Builds DOM nodes (no innerHTML), tracks progress, supports grouped questions.
+*/
 
-// Survey configuration constants
+// Constants used across the survey
 const SURVEY_CONSTANTS = {
   MANDATORY_TRUE: 'TRUE',
   QUESTION_TYPE: 'question',
@@ -21,19 +17,15 @@ const SURVEY_CONSTANTS = {
   JSON_EXTENSION: 'json',
 };
 
-/**
- * Validates whether a survey question requires an answer before proceeding.
- * Combines both mandatory flag and question type to determine requirement.
- */
+// Required only if mandatory and it's an actual question (facts don't count)
 function isAnswerRequired(question) {
-  return question.Mandatory === SURVEY_CONSTANTS.MANDATORY_TRUE
-    && question.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE;
+  return (
+    question.Mandatory === SURVEY_CONSTANTS.MANDATORY_TRUE
+    && question.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE
+  );
 }
 
-/**
- * Checks if the user has provided a valid answer for a given question.
- * Handles both null and undefined values as invalid answers.
- */
+// Null/undefined means unanswered; empty string may be valid for some types
 function hasValidAnswer(question, answers) {
   return answers[question.ContentId] != null;
 }
@@ -53,7 +45,10 @@ function findRelatedQuestions(surveyData, startIndex) {
     const currentQuestion = surveyData[i];
     const currentBaseId = currentQuestion.ContentId.replace(/[a-z]$/, '');
 
-    if (currentBaseId === baseId && currentBaseId !== currentQuestion.ContentId) {
+    if (
+      currentBaseId === baseId
+      && currentBaseId !== currentQuestion.ContentId
+    ) {
       relatedQuestions.push(currentQuestion);
     } else {
       break; // Stop when we find a question that doesn't belong to this group
@@ -63,7 +58,7 @@ function findRelatedQuestions(surveyData, startIndex) {
   return relatedQuestions;
 }
 
-// Create DOM elements safely without innerHTML to prevent XSS
+// Small helper to create elements (no innerHTML)
 function createElement(tag, className = '', textContent = '', attributes = {}) {
   const element = document.createElement(tag);
   if (className) element.classList.add(...className.split(' '));
@@ -80,24 +75,24 @@ function createElement(tag, className = '', textContent = '', attributes = {}) {
   return element;
 }
 
-// Helper function for creating common div elements
+// Div helper
 function createDiv(className = '', textContent = '') {
   return createElement('div', className, textContent);
 }
 
-// Helper function for creating buttons with common attributes
+// Button helper
 function createButton(className, textContent, type = 'button') {
   return createElement('button', className, textContent, { type });
 }
 
-// Helper function to add CSS class conditionally
+// Add class if needed
 function addClassIf(element, className, condition = true) {
   if (element && condition) {
     element.classList.add(className);
   }
 }
 
-// Helper function to move node to target parent with class
+// Move node to target parent and add class
 function moveNode(node, targetParent, className) {
   if (node) {
     addClassIf(node, className);
@@ -107,7 +102,7 @@ function moveNode(node, targetParent, className) {
   }
 }
 
-// Helper function to create and append multiple children to a parent
+// Append many children
 function appendChildren(parent, children) {
   children.forEach((child) => {
     if (child) parent.appendChild(child);
@@ -115,21 +110,19 @@ function appendChildren(parent, children) {
   return parent;
 }
 
-// Helper function to attach event listeners to multiple elements
+// Attach the same listener to multiple elements
 function attachListeners(elements, eventType, handler) {
   elements.forEach((element) => {
     if (element) element.addEventListener(eventType, handler);
   });
 }
 
-// Safely replace all content in a container
+// Replace container content safely
 function replaceContent(container, newContent) {
-  // Clear existing content safely
   while (container.firstChild) {
     container.removeChild(container.firstChild);
   }
 
-  // Add new content
   if (typeof newContent === 'string') {
     container.textContent = newContent;
   } else if (newContent) {
@@ -137,7 +130,7 @@ function replaceContent(container, newContent) {
   }
 }
 
-// Create radio button options for multiple choice questions
+// Build radio options for a question
 function createRadioOptions(contentId, options) {
   const optionElements = options.map((option) => {
     const input = createElement('input', '', '', {
@@ -157,7 +150,7 @@ function createRadioOptions(contentId, options) {
   return appendChildren(createDiv('options'), optionElements);
 }
 
-// Create slider with labeled options (for rating scales)
+// Slider + labels; keep labels in data-options
 function createSlider(contentId, options, questionText = '') {
   const elements = [];
 
@@ -178,14 +171,16 @@ function createSlider(contentId, options, questionText = '') {
     'data-options': JSON.stringify(options),
   });
 
-  // Wrap the track elements (labels, slider input) in a constrained wrapper
-  const trackWrapper = appendChildren(createDiv('slider-track-wrapper'), [labelsDiv, slider]);
+  const trackWrapper = appendChildren(createDiv('slider-track-wrapper'), [
+    labelsDiv,
+    slider,
+  ]);
 
   elements.push(trackWrapper);
   return appendChildren(createDiv('slider-container'), elements);
 }
 
-// Fetch survey data - handles both direct JSON URLs and path mappings
+// Fetch survey JSON; supports pretty hrefs via /paths.json
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
   if (!surveyHref.endsWith('json')) {
@@ -206,40 +201,38 @@ async function fetchSurveyData(surveyHref) {
   return json;
 }
 
-// Parse and normalize survey data from API response
+// Normalize API payload (Options can arrive as CSV strings)
 function parseSurveyData(surveyResponse) {
-  // API consistently returns {data: [...], total, offset, limit} format
   const questions = surveyResponse.data || [];
 
-  // However, Options field may sometimes be converted to comma-separated strings
-  // during Excel/AEM processing, so we need to normalize it back to arrays
   const normalizedQuestions = questions.map((item) => {
-    // Ensure Options is always an array
     if (item.Options && typeof item.Options === 'string') {
       item.Options = item.Options.split(',').map((opt) => opt.trim());
     }
     return item;
   });
 
-  // Sort by Order column
-  return normalizedQuestions.sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
+  return normalizedQuestions.sort(
+    (a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10),
+  );
 }
 
-// Calculate survey progress based on completed questions
+// Progress: count only questions that actually count
 function calculateProgress(currentIndex, surveyData) {
-  const actualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE');
+  const actualQuestions = surveyData.filter(
+    (q) => q.CountsAsQuestion === 'TRUE',
+  );
   const totalActualQuestions = actualQuestions.length;
 
   const questionsCompleted = surveyData
     .slice(0, currentIndex + 1)
-    .filter((q) => q.CountsAsQuestion === 'TRUE')
-    .length;
+    .filter((q) => q.CountsAsQuestion === 'TRUE').length;
 
   const progress = (questionsCompleted / totalActualQuestions) * 100;
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
-// Build the main survey template with progress bar and navigation
+// Wrap a slide with progress + content + back/next
 function createSurveyTemplate(
   progress,
   questionsCompleted,
@@ -248,14 +241,20 @@ function createSurveyTemplate(
   icon,
   contentElement,
 ) {
-  // Create progress section
   const progressFill = createDiv('progress-fill');
   progressFill.style.width = `${progress}%`;
-  const progressTrack = appendChildren(createDiv('progress-track'), [progressFill]);
-  const progressCounter = createDiv('progress-counter', `${questionsCompleted}/${totalActualQuestions}`);
-  const progressDiv = appendChildren(createDiv('progress'), [progressTrack, progressCounter]);
+  const progressTrack = appendChildren(createDiv('progress-track'), [
+    progressFill,
+  ]);
+  const progressCounter = createDiv(
+    'progress-counter',
+    `${questionsCompleted}/${totalActualQuestions}`,
+  );
+  const progressDiv = appendChildren(createDiv('progress'), [
+    progressTrack,
+    progressCounter,
+  ]);
 
-  // Create content section
   const sectionTitle = createElement('span', 'section-title', section);
   const questionIcon = createDiv('question-icon', icon);
   const navDiv = appendChildren(createDiv('nav'), [
@@ -272,7 +271,7 @@ function createSurveyTemplate(
   return appendChildren(createDiv('survey-form'), [progressDiv, contentDiv]);
 }
 
-// Helper function to extract common question data and progress
+// Pull common props + progress numbers
 function getQuestionContext(questionData, currentIndex, surveyData) {
   const { Section, Icon } = questionData;
   const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
@@ -280,11 +279,15 @@ function getQuestionContext(questionData, currentIndex, surveyData) {
     surveyData,
   );
   return {
-    Section, Icon, progress, questionsCompleted, totalActualQuestions,
+    Section,
+    Icon,
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
   };
 }
 
-// Create fact/information slides (non-interactive content)
+// Fact slide (read-only)
 function createFactContent(questionData, currentIndex, surveyData) {
   const { Title, Question } = questionData;
   const {
@@ -306,7 +309,7 @@ function createFactContent(questionData, currentIndex, surveyData) {
   );
 }
 
-// Build interactive question slides (radio buttons, sliders, etc.)
+// Interactive slide (radio/slider, supports grouped sliders)
 function createQuestion(questionData, currentIndex, surveyData) {
   const {
     ContentType, Title, Question, Options, OptionType, ContentId,
@@ -375,11 +378,12 @@ function createQuestion(questionData, currentIndex, surveyData) {
   );
 }
 
-// Build the answers summary as a semantic UL/LI list
+// Answers summary (UL/LI)
 function createAnswersListUL(surveyData, surveyAnswers) {
   // Filter only counted questions (e.g., 6/6)
   const countedQuestions = surveyData.filter(
-    (q) => q.CountsAsQuestion === 'TRUE' && q.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE,
+    (q) => q.CountsAsQuestion === 'TRUE'
+      && q.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE,
   );
   const total = countedQuestions.length;
 
@@ -407,7 +411,10 @@ function createAnswersListUL(surveyData, surveyAnswers) {
 
     appendChildren(desc, [ordinal, sentenceDiv]);
 
-    const iconDiv = createDiv(`slide-${index + 1} answer-item--icon`, q.Icon || '💡');
+    const iconDiv = createDiv(
+      `slide-${index + 1} answer-item--icon`,
+      q.Icon || '💡',
+    );
 
     appendChildren(contentWrap, [desc, iconDiv]);
     appendChildren(li, [sectionSpan, contentWrap]);
@@ -420,26 +427,24 @@ function createAnswersListUL(surveyData, surveyAnswers) {
 export default function decorate(block) {
   if (!block) return;
 
-  // prevent running twice on the same block
+  // Don't decorate twice
   if (block.dataset.decorated === '1') return;
   block.dataset.decorated = '1';
 
-  // capture the top-level divs
   let surveyArea = block.querySelector(':scope > div:nth-child(1)');
   const logo = block.querySelector(':scope > div:nth-child(2)');
   const content = block.querySelector(':scope > div:nth-child(3)');
   const footer = block.querySelector(':scope > div:last-child');
 
-  // create a survey-area wrapper if missing
+  // Make a survey-area wrapper if missing
   if (!surveyArea && (logo || content)) {
     surveyArea = createDiv();
     block.prepend(surveyArea);
   }
 
-  // apply the survey-area class
   addClassIf(surveyArea, 'survey-area');
 
-  // handle background picture → CSS background
+  // Background picture → CSS background
   const bgWrapper = surveyArea?.querySelector(':scope > div:first-child');
   const pic = bgWrapper?.querySelector('picture');
   const img = pic?.querySelector('img');
@@ -458,59 +463,60 @@ export default function decorate(block) {
     };
 
     if (img.currentSrc) {
-      img.decode()
+      img
+        .decode()
         .then(applyBackgroundAndRemove)
         .catch(applyBackgroundAndRemove);
     } else {
-      img.addEventListener('load', () => {
-        img.decode()
-          .then(applyBackgroundAndRemove)
-          .catch(applyBackgroundAndRemove);
-      }, { once: true });
+      img.addEventListener(
+        'load',
+        () => {
+          img
+            .decode()
+            .then(applyBackgroundAndRemove)
+            .catch(applyBackgroundAndRemove);
+        },
+        { once: true },
+      );
     }
   }
 
-  // move nodes in their original order
   moveNode(logo, surveyArea, 'logo');
   moveNode(content, surveyArea, 'content');
 
-  // Convert button paragraph to div using consistent approach
+  // Swap <p> button container to <div> (layout)
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
     const div = createDiv();
     div.className = buttonContainer.className; // Keep existing classes intact
-    // Copy all child nodes safely
     while (buttonContainer.firstChild) {
       div.appendChild(buttonContainer.firstChild);
     }
     buttonContainer.parentNode.replaceChild(div, buttonContainer);
   }
 
-  // Survey state management
+  // Survey state
   let surveyData = [];
   let currentQuestionIndex = 0;
   let surveyAnswers = {};
   let originalContent = '';
 
-  // Function to navigate to specific question
   function showQuestion(index) {
     currentQuestionIndex = index;
     const questionData = surveyData[index];
 
     const questionElement = createQuestion(questionData, index, surveyData);
-
-    // Preserve the original container structure and styling
+    // Keep container class
     surveyArea.className = 'survey-area';
     replaceContent(surveyArea, questionElement);
 
-    // Attach event listeners
     // eslint-disable-next-line no-use-before-define
     attachNavigationListeners();
     // eslint-disable-next-line no-use-before-define
     attachInputListeners();
   }
 
-  // Handle Get Started button click
+  // Start survey on click
   async function handleGetStartedClick(e) {
     e.preventDefault();
 
@@ -520,11 +526,10 @@ export default function decorate(block) {
       // Store original content
       originalContent = surveyArea.innerHTML;
 
-      // Fetch and parse survey data
+      // Fetch + normalize survey data
       const data = await fetchSurveyData(surveyDataPath);
       console.log('Survey data loaded:', data);
-
-      // Assuming the data is CSV format, parse it
+      // Normalize/parse data shape
       surveyData = parseSurveyData(data);
       console.log('Parsed survey questions:', surveyData);
 
@@ -538,18 +543,20 @@ export default function decorate(block) {
     }
   }
 
-  // Function to attach Get Started button listener
+  // Wire up the Get Started button
   function attachGetStartedListener() {
-    const getStartedButton = surveyArea.querySelector('.button-container .button');
+    const getStartedButton = surveyArea.querySelector(
+      '.button-container .button',
+    );
     attachListeners([getStartedButton], 'click', handleGetStartedClick);
   }
 
-  // Handle slider input change
+  // Slider change handler
   function handleSliderInput(e, options, questionId) {
     const selectedIndex = parseInt(e.target.value, 10);
     surveyAnswers[questionId] = options[selectedIndex];
 
-    // Update CSS class to show the correct dialog
+    // Update selected-* classes
     const trackWrapper = e.target.parentElement;
 
     // Remove all previous selection classes
@@ -564,7 +571,7 @@ export default function decorate(block) {
     trackWrapper.classList.remove('error');
   }
 
-  // Handle radio button change
+  // Radio change handler
   function handleRadioChange(e, questionId) {
     surveyAnswers[questionId] = e.target.value;
 
@@ -572,7 +579,9 @@ export default function decorate(block) {
     const optionDiv = e.target.closest('.option');
     if (optionDiv) {
       // Clear error from all options in this question group
-      const allOptions = surveyArea.querySelectorAll(`input[name="${questionId}"]`);
+      const allOptions = surveyArea.querySelectorAll(
+        `input[name="${questionId}"]`,
+      );
       allOptions.forEach((option) => {
         const optDiv = option.closest('.option');
         if (optDiv) {
@@ -582,13 +591,15 @@ export default function decorate(block) {
     }
   }
 
-  // Add visual error state to a question
+  // Highlight invalid controls
   function addErrorState(question) {
     const currentQuestion = surveyData[currentQuestionIndex];
 
     if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
       // For radio buttons, find all options for this question
-      const options = surveyArea.querySelectorAll(`input[name="${question.ContentId}"]`);
+      const options = surveyArea.querySelectorAll(
+        `input[name="${question.ContentId}"]`,
+      );
       options.forEach((option) => {
         const optionDiv = option.closest('.option');
         if (optionDiv) {
@@ -597,7 +608,9 @@ export default function decorate(block) {
       });
     } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
       // For sliders, find the specific slider track wrapper
-      const slider = surveyArea.querySelector(`input[name="${question.ContentId}"]`);
+      const slider = surveyArea.querySelector(
+        `input[name="${question.ContentId}"]`,
+      );
       if (slider) {
         const trackWrapper = slider.closest('.slider-track-wrapper');
         if (trackWrapper) {
@@ -609,13 +622,15 @@ export default function decorate(block) {
 
   // Clear all error states
   function clearErrorStates() {
-    const errorElements = surveyArea.querySelectorAll('.option.error, .slider-track-wrapper.error');
+    const errorElements = surveyArea.querySelectorAll(
+      '.option.error, .slider-track-wrapper.error',
+    );
     errorElements.forEach((element) => {
       element.classList.remove('error');
     });
   }
 
-  // Validate all related questions before navigation
+  // Validate current slide (incl. grouped questions)
   function validateQuestions(relatedQuestions) {
     const invalidQuestions = relatedQuestions.filter((question) => {
       const isRequired = isAnswerRequired(question);
@@ -640,10 +655,13 @@ export default function decorate(block) {
     return true;
   }
 
-  // Attach input event listeners
+  // Wire inputs for the current slide
   function attachInputListeners() {
     const currentQuestion = surveyData[currentQuestionIndex];
-    const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
+    const relatedQuestions = findRelatedQuestions(
+      surveyData,
+      currentQuestionIndex,
+    );
 
     if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
       const sliders = surveyArea.querySelectorAll('.slider');
@@ -653,14 +671,16 @@ export default function decorate(block) {
         const questionData = relatedQuestions[index];
         const options = JSON.parse(slider.dataset.options);
 
-        // Attach event listener
+        // Listen for changes
         slider.addEventListener('input', (e) => {
           handleSliderInput(e, options, questionData.ContentId);
         });
 
         // Initialize values and CSS classes
         if (surveyAnswers[questionData.ContentId]) {
-          const answerIndex = options.indexOf(surveyAnswers[questionData.ContentId]);
+          const answerIndex = options.indexOf(
+            surveyAnswers[questionData.ContentId],
+          );
           if (answerIndex !== -1) {
             slider.value = answerIndex;
             // Add selected class for previously made selection
@@ -674,7 +694,9 @@ export default function decorate(block) {
         }
       });
     } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
-      const radioButtons = surveyArea.querySelectorAll(`input[name="${currentQuestion.ContentId}"]`);
+      const radioButtons = surveyArea.querySelectorAll(
+        `input[name="${currentQuestion.ContentId}"]`,
+      );
 
       attachListeners(radioButtons, 'change', (e) => {
         handleRadioChange(e, currentQuestion.ContentId);
@@ -689,10 +711,13 @@ export default function decorate(block) {
     }
   }
 
-  // Unified navigation handler
+  // Back/Next handler (validate on next). Emits custom events.
   function handleNavigation(direction) {
     if (direction === 'next') {
-      const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
+      const relatedQuestions = findRelatedQuestions(
+        surveyData,
+        currentQuestionIndex,
+      );
 
       if (!validateQuestions(relatedQuestions)) {
         return;
@@ -703,7 +728,7 @@ export default function decorate(block) {
     surveyArea.dispatchEvent(new CustomEvent(`survey:${direction}`));
   }
 
-  // Attach navigation event listeners
+  // Bind nav buttons
   function attachNavigationListeners() {
     const buttons = [
       { element: surveyArea.querySelector('.btn-back'), direction: 'back' },
@@ -717,7 +742,7 @@ export default function decorate(block) {
     });
   }
 
-  // Helper function to find the start of a question group
+  // Find the first item in a grouped set
   function findGroupStart(startIndex) {
     let index = startIndex;
     const targetQuestion = surveyData[index];
@@ -743,9 +768,12 @@ export default function decorate(block) {
     return index;
   }
 
-  // Helper function to calculate next question index
+  // Jump past grouped siblings to the next question
   function getNextQuestionIndex() {
-    const relatedQuestions = findRelatedQuestions(surveyData, currentQuestionIndex);
+    const relatedQuestions = findRelatedQuestions(
+      surveyData,
+      currentQuestionIndex,
+    );
     const questionsToSkip = relatedQuestions.length - 1;
     return currentQuestionIndex + 1 + questionsToSkip;
   }
@@ -772,22 +800,30 @@ export default function decorate(block) {
       if (nextIndex < surveyData.length) {
         showQuestion(nextIndex);
       } else {
-        // Survey complete - add "Complete!" span above progress bar
+        // Done: mark progress UI and show summary
         const progressDiv = surveyArea.querySelector('.progress');
         if (progressDiv) {
           // Check if "Complete!" span doesn't already exist
           if (!progressDiv.querySelector('.progress-complete')) {
-            const completeSpan = createElement('span', 'progress-complete', 'Complete!');
+            const completeSpan = createElement(
+              'span',
+              'progress-complete',
+              'Complete!',
+            );
             progressDiv.insertBefore(completeSpan, progressDiv.firstChild);
           }
         }
 
-        // Replace content with answers summary (UL/LI structure)
+        // Swap content for answers summary (UL/LI)
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
           // Create header wrapper with title and subtitle
           const header = createDiv('answers-list-header');
-          const answersHeading = createElement('h1', 'answers-title', 'Your Answers');
+          const answersHeading = createElement(
+            'h1',
+            'answers-title',
+            'Your Answers',
+          );
           const subtitleText = createElement(
             'p',
             'answers-subtitle',
@@ -805,27 +841,39 @@ export default function decorate(block) {
           replaceContent(contentDiv, container);
         }
 
-        // Show footer content after survey completion
+        // Show footer after completion: thanks + save + learn more
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
           // Create thank you message
-          const thankYouMessage = createElement('p', 'survey-thank-you', 'Thank you for completing this Depression Journey Questionnaire.');
+          const thankYouMessage = createElement(
+            'p',
+            'survey-thank-you',
+            'Thank you for completing this Depression Journey Questionnaire.',
+          );
 
           // Create save answers button
           const saveButton = createButton('button', 'Save Your Answers');
           saveButton.id = 'save-answers';
 
           // Create learn more link
-          const learnMoreLink = createElement('a', 'survey-learn-more', 'Learn more about depression and Partial Response', {
-            href: '#',
-          });
+          const learnMoreLink = createElement(
+            'a',
+            'survey-learn-more',
+            'Learn more about depression and Partial Response',
+            {
+              href: '#',
+            },
+          );
           const learnMoreParagraph = createElement('p');
           learnMoreParagraph.appendChild(learnMoreLink);
 
           // Insert new elements at the beginning of footer
           const footerContentDiv = footerDiv.querySelector('div');
           if (footerContentDiv) {
-            footerContentDiv.insertBefore(thankYouMessage, footerContentDiv.firstChild);
+            footerContentDiv.insertBefore(
+              thankYouMessage,
+              footerContentDiv.firstChild,
+            );
             footerContentDiv.appendChild(saveButton);
             footerContentDiv.appendChild(learnMoreParagraph);
           }
