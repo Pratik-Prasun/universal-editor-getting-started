@@ -62,7 +62,7 @@ function findRelatedQuestions(surveyData, startIndex) {
   return relatedQuestions;
 }
 
-// Small helper to create elements (no innerHTML)
+// Small helper to create elements
 function createElement(tag, className = '', textContent = '', attributes = {}) {
   const element = document.createElement(tag);
   if (className) element.classList.add(...className.split(' '));
@@ -106,7 +106,7 @@ function moveNode(node, targetParent, className) {
   }
 }
 
-// Append many children
+// Append children
 function appendChildren(parent, children) {
   children.forEach((child) => {
     if (child) parent.appendChild(child);
@@ -154,7 +154,7 @@ function createRadioOptions(contentId, options) {
   return appendChildren(createDiv('options'), optionElements);
 }
 
-// Slider + labels; keep labels in data-options
+// Slider + labels (labels stored in data-options)
 function createSlider(contentId, options, questionText = '') {
   const elements = [];
 
@@ -205,7 +205,7 @@ async function fetchSurveyData(surveyHref) {
   return json;
 }
 
-// Normalize API payload (Options can arrive as CSV strings)
+// Normalize API payload (Options can be CSV)
 function parseSurveyData(surveyResponse) {
   const questions = surveyResponse.data || [];
 
@@ -221,7 +221,7 @@ function parseSurveyData(surveyResponse) {
   );
 }
 
-// Progress: count only questions that actually count
+// Compute progress over counted questions
 function calculateProgress(currentIndex, surveyData) {
   const actualQuestions = surveyData.filter(
     (q) => q.CountsAsQuestion === 'TRUE',
@@ -236,7 +236,7 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
-// Wrap a slide with progress + content + back/next
+// Build slide: progress + content + nav
 function createSurveyTemplate(
   progress,
   questionsCompleted,
@@ -275,7 +275,7 @@ function createSurveyTemplate(
   return appendChildren(createDiv('survey-form'), [progressDiv, contentDiv]);
 }
 
-// Pull common props + progress numbers
+// Common props + progress
 function getQuestionContext(questionData, currentIndex, surveyData) {
   const { Section, Icon } = questionData;
   const { progress, questionsCompleted, totalActualQuestions } = calculateProgress(
@@ -291,7 +291,7 @@ function getQuestionContext(questionData, currentIndex, surveyData) {
   };
 }
 
-// Fact slide (read-only)
+// Fact slide
 function createFactContent(questionData, currentIndex, surveyData) {
   const { Title, Question } = questionData;
   const {
@@ -382,7 +382,7 @@ function createQuestion(questionData, currentIndex, surveyData) {
   );
 }
 
-// Format answer using template from CSV
+// Format answer using AnswerTemplate
 function formatAnswerFromTemplate(question, selectedAnswer) {
   let template = question.AnswerTemplate;
 
@@ -550,7 +550,7 @@ export default function decorate(block) {
   const content = block.querySelector(':scope > div:nth-child(3)');
   const footer = block.querySelector(':scope > div:last-child');
 
-  // Make a survey-area wrapper if missing
+  // Ensure survey-area wrapper exists
   if (!surveyArea && (logo || content)) {
     surveyArea = createDiv();
     block.prepend(surveyArea);
@@ -558,7 +558,7 @@ export default function decorate(block) {
 
   addClassIf(surveyArea, 'survey-area');
 
-  // Background picture → CSS background
+  // Promote first picture to background-image
   const bgWrapper = surveyArea?.querySelector(':scope > div:first-child');
   const pic = bgWrapper?.querySelector('picture');
   const img = pic?.querySelector('img');
@@ -598,7 +598,7 @@ export default function decorate(block) {
   moveNode(logo, surveyArea, 'logo');
   moveNode(content, surveyArea, 'content');
 
-  // Swap <p> button container to <div> (layout)
+  // Swap <p> button container to <div>
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
     const div = createDiv();
@@ -615,54 +615,7 @@ export default function decorate(block) {
   let surveyAnswers = {};
   let originalContent = '';
 
-  function showQuestion(index) {
-    currentQuestionIndex = index;
-    const questionData = surveyData[index];
-
-    const questionElement = createQuestion(questionData, index, surveyData);
-    // Keep container class
-    surveyArea.className = 'survey-area';
-    replaceContent(surveyArea, questionElement);
-
-    // eslint-disable-next-line no-use-before-define
-    attachNavigationListeners();
-    // eslint-disable-next-line no-use-before-define
-    attachInputListeners();
-  }
-
-  // Start survey on click
-  async function handleGetStartedClick(e) {
-    e.preventDefault();
-
-    const surveyDataPath = e.target.getAttribute('href');
-
-    try {
-      // Store original content
-      originalContent = surveyArea.innerHTML;
-
-      // Fetch + normalize survey data
-      const data = await fetchSurveyData(surveyDataPath);
-      // Normalize/parse data shape
-      surveyData = parseSurveyData(data);
-
-      // Start survey
-      currentQuestionIndex = 0;
-      surveyAnswers = {};
-      showQuestion(0);
-    } catch (error) {
-      logError('Failed to load survey data:', error);
-      // Error logged to console - no user-facing alert needed for now
-    }
-  }
-
-  // Wire up the Get Started button
-  function attachGetStartedListener() {
-    const getStartedButton = surveyArea.querySelector(
-      '.button-container .button',
-    );
-    attachListeners([getStartedButton], 'click', handleGetStartedClick);
-  }
-
+  // Input handlers and validation helpers (defined before use)
   // Slider change handler
   function handleSliderInput(e, options, questionId) {
     const selectedIndex = parseInt(e.target.value, 10);
@@ -823,7 +776,7 @@ export default function decorate(block) {
     }
   }
 
-  // Back/Next handler (validate on next). Emits custom events.
+  // Back/Next handler (validate on next)
   function handleNavigation(direction) {
     if (direction === 'next') {
       const relatedQuestions = findRelatedQuestions(
@@ -852,6 +805,53 @@ export default function decorate(block) {
         element.addEventListener('click', () => handleNavigation(direction));
       }
     });
+  }
+
+  // Render a question slide and bind listeners
+  function showQuestion(index) {
+    currentQuestionIndex = index;
+    const questionData = surveyData[index];
+
+    const questionElement = createQuestion(questionData, index, surveyData);
+    // Keep container class
+    surveyArea.className = 'survey-area';
+    replaceContent(surveyArea, questionElement);
+
+    attachNavigationListeners();
+    attachInputListeners();
+  }
+
+  // Start survey on click
+  async function handleGetStartedClick(e) {
+    e.preventDefault();
+
+    const surveyDataPath = e.target.getAttribute('href');
+
+    try {
+      // Store original content
+      originalContent = surveyArea.innerHTML;
+
+      // Fetch + normalize survey data
+      const data = await fetchSurveyData(surveyDataPath);
+      // Normalize/parse data shape
+      surveyData = parseSurveyData(data);
+
+      // Start survey
+      currentQuestionIndex = 0;
+      surveyAnswers = {};
+      showQuestion(0);
+    } catch (error) {
+      logError('Failed to load survey data:', error);
+      // Error logged to console - no user-facing alert needed for now
+    }
+  }
+
+  // Wire up the Get Started button
+  function attachGetStartedListener() {
+    const getStartedButton = surveyArea.querySelector(
+      '.button-container .button',
+    );
+    attachListeners([getStartedButton], 'click', handleGetStartedClick);
   }
 
   // Find the first item in a grouped set
@@ -937,10 +937,22 @@ export default function decorate(block) {
             'Your Answers',
           );
           const subtitleText = createElement('p', 'answers-subtitle');
-          subtitleText.innerHTML = 'Be sure to <a href="#save-answers" class="save-link">save your answers below</a> to share with your healthcare provider. Ask your healthcare provider about adding REXULTI to your antidepressant—an open conversation may help get you where you want to be.';
+          subtitleText.appendChild(document.createTextNode('Be sure to '));
+          const saveLinkEl = createElement(
+            'a',
+            'save-link',
+            'save your answers below',
+            { href: '#save-answers' },
+          );
+          subtitleText.appendChild(saveLinkEl);
+          subtitleText.appendChild(
+            document.createTextNode(
+              ' to share with your healthcare provider. Ask your healthcare provider about adding REXULTI to your antidepressant—an open conversation may help get you where you want to be.',
+            ),
+          );
           appendChildren(header, [answersHeading, subtitleText]);
 
-          // Build semantic UL/LI answers list
+          // Build answers list
           const listEl = createAnswersListUL(surveyData, surveyAnswers);
           const answersList = createDiv('answers-list');
           if (listEl) answersList.appendChild(listEl);
@@ -953,18 +965,18 @@ export default function decorate(block) {
         // Show footer after completion: thanks + save + learn more
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
-          // Create thank you message
+          // Thank you message
           const thankYouMessage = createElement(
             'p',
             'survey-thank-you',
             'Thank you for completing this Depression Journey Questionnaire.',
           );
 
-          // Create save answers button
+          // Save answers button
           const saveButton = createButton('button', 'Save Your Answers');
           saveButton.id = 'save-answers';
 
-          // Create learn more link
+          // Learn more link
           const learnMoreLink = createElement(
             'a',
             'survey-learn-more',
@@ -976,7 +988,7 @@ export default function decorate(block) {
           const learnMoreParagraph = createElement('p');
           learnMoreParagraph.appendChild(learnMoreLink);
 
-          // Insert new elements at the beginning of footer
+          // Insert elements in footer
           const footerContentDiv = footerDiv.querySelector('div');
           if (footerContentDiv) {
             footerContentDiv.insertBefore(
@@ -990,7 +1002,7 @@ export default function decorate(block) {
           // Make footer visible
           footerDiv.style.display = 'block';
 
-          // Add scroll functionality for save link
+          // Scroll to save button from header link
           const saveLink = surveyArea.querySelector('.save-link');
           if (saveLink) {
             saveLink.addEventListener('click', (e) => {
