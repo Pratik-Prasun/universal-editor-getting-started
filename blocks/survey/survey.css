@@ -663,6 +663,15 @@
   font-size: 16px !important;
 }
 
+.survey .survey-form .answers-subtitle .save-link {
+  color: #144633;
+  text-decoration: underline;
+  text-decoration-color: #144633;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
 /* Answers grid (minimal, scoped) */
 /* Header wrapper used by current JS */
 .survey .survey-form .answers-list-header {
@@ -753,13 +762,19 @@
 }
 
 .survey .survey-form .answer-item--description > span {
-  color: var(--survey-text-color);
+  color: #497527;
   font-size: 14px;
-  margin-bottom: 8px;
+  text-align: left;
 }
 
 .survey .survey-form .answer-item--description div {
   color: #333;
+  text-align: left;
+}
+
+/* Add spacing between multiple answers in grouped questions (like Q5a + Q5b) */
+.survey .survey-form .answer-item--description div > div + div {
+  margin-top: 16px;
 }
 
 /* normalize paragraphs if present in multi-line answers */
