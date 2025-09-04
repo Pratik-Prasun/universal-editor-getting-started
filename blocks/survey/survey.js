@@ -469,7 +469,8 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
   }
 
   return groups;
-}// Answers summary (UL/LI)
+}
+// Answers summary (UL/LI)
 function createAnswersListUL(surveyData, surveyAnswers) {
   const questionGroups = groupQuestionsForAnswers(surveyData, surveyAnswers);
   const total = questionGroups.length;
@@ -602,7 +603,7 @@ export default function decorate(block) {
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
     const div = createDiv();
-    div.className = buttonContainer.className; // Keep existing classes intact
+    div.className = buttonContainer.className;
     while (buttonContainer.firstChild) {
       div.appendChild(buttonContainer.firstChild);
     }
@@ -975,6 +976,93 @@ export default function decorate(block) {
           // Save answers button
           const saveButton = createButton('button', 'Save Your Answers');
           saveButton.id = 'save-answers';
+
+          // Modal builder (lazy create)
+          const buildSaveAnswersModal = () => {
+            // Avoid duplicate overlays
+            let overlay = document.querySelector('.survey-modal-overlay');
+            if (overlay) return overlay;
+
+            overlay = createDiv('survey-modal-overlay hidden');
+            overlay.setAttribute('role', 'presentation');
+
+            const dialog = createDiv('survey-modal');
+            dialog.setAttribute('role', 'dialog');
+            dialog.setAttribute('aria-modal', 'true');
+            dialog.setAttribute('aria-labelledby', 'survey-modal-title');
+            dialog.setAttribute('aria-describedby', 'survey-modal-desc');
+
+            const closeBtn = createButton('survey-modal-close', '×');
+            closeBtn.setAttribute('aria-label', 'Close');
+
+            const iconWrap = createDiv('survey-modal-icon', '');
+            // Re‑use one of the icons if available else fallback emoji
+            iconWrap.textContent = '💡';
+
+            const title = createElement('h2', 'survey-modal-title', 'Thank you for taking the questionnaire!', { id: 'survey-modal-title' });
+            const desc = createElement('p', 'survey-modal-desc', 'Select one of the options below—you can have your answers emailed to you or download them right now. Remember to share this with your healthcare provider at your next visit.', { id: 'survey-modal-desc' });
+
+            const actions = createDiv('survey-modal-actions');
+            const emailBtn = createButton('button survey-modal-action primary', 'Email Your Answers ▶');
+            emailBtn.type = 'button';
+            emailBtn.dataset.action = 'email-answers';
+            const pdfBtn = createButton('button survey-modal-action secondary', 'Save as PDF ↓');
+            pdfBtn.type = 'button';
+            pdfBtn.dataset.action = 'download-pdf';
+            appendChildren(actions, [emailBtn, pdfBtn]);
+
+            appendChildren(dialog, [closeBtn, iconWrap, title, desc, actions]);
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            // Focus handling
+            function closeModal() {
+              overlay.classList.add('hidden');
+              document.body.classList.remove('survey-modal-open');
+              if (saveButton) saveButton.focus();
+            }
+
+            closeBtn.addEventListener('click', closeModal);
+            overlay.addEventListener('click', (e) => {
+              if (e.target === overlay) closeModal();
+            });
+            document.addEventListener('keydown', (e) => {
+              if (!overlay.classList.contains('hidden') && e.key === 'Escape') {
+                closeModal();
+              }
+            });
+
+            // Placeholder actions (hook points for integration)
+            emailBtn.addEventListener('click', () => {
+              // TODO: integrate email sending
+              // eslint-disable-next-line no-console
+              console.log('Email answers action triggered', surveyAnswers);
+              closeModal();
+            });
+            pdfBtn.addEventListener('click', () => {
+              // TODO: integrate PDF generation
+              // eslint-disable-next-line no-console
+              console.log('Download PDF action triggered', surveyAnswers);
+              closeModal();
+            });
+
+            return overlay;
+          };
+
+          const openSaveAnswersModal = () => {
+            const overlay = buildSaveAnswersModal();
+            if (overlay) {
+              overlay.classList.remove('hidden');
+              document.body.classList.add('survey-modal-open');
+              const focusable = overlay.querySelector('button');
+              if (focusable) focusable.focus();
+            }
+          };
+
+          saveButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            openSaveAnswersModal();
+          });
 
           // Learn more link
           const learnMoreLink = createElement(
