@@ -1105,8 +1105,6 @@ export default function decorate(block) {
             });
           }
         }
-
-        // Survey completed
       }
     });
   }
