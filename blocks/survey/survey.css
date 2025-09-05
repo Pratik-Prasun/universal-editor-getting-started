@@ -22,6 +22,16 @@
   --survey-progress-track-bg: rgb(255 255 255 / 30%);
   --survey-shadow-dark: rgb(0 0 0 / 20%);
   
+  /* Brand / modal additions */
+  --survey-brand-primary: #2b5847;
+  --survey-brand-primary-hover: #356e59;
+  --survey-brand-primary-active: #234638;
+    /* Modal backdrop (adjust opacity here if too dark/light) */
+    --survey-modal-backdrop-rgb: 43 88 71; /* brand tint */
+    --survey-modal-backdrop-opacity: 90%; /* adjusted per request */
+    --survey-modal-backdrop-color: rgba(var(--survey-modal-backdrop-rgb) / var(--survey-modal-backdrop-opacity));
+  --survey-modal-backdrop-blur: 6px;
+  
   /* Additional color variables for consistency */
   --survey-back-button-color: #497527;
   --survey-form-background: #3D6221;
@@ -63,6 +73,9 @@
   --survey-margin-half: 0.5rem;
   --survey-border-radius-large: 24px;
   --survey-footer-content-max-width: 832px;
+  
+  /* Answers completion card sizing */
+  --answer-card-min-height: 277px; /* Approx height seen in tooling for a single card */
 }
 
 .survey-area {
@@ -247,6 +260,7 @@
   padding: 32px;
   margin-top: 0; /* Remove top margin so progress bar isn't pushed */
   max-width: 100%;
+  min-height: 555px;
 }
 
 .survey .options {
@@ -349,12 +363,17 @@
   padding: 0 var(--survey-spacing-small);
 }
 
+.survey .survey-form .progress {
+  min-height: 42px;
+}
+
 .survey .survey-form {
   grid-column: 1 / -1; /* Span both columns when inside survey-area */
   padding: 0;
   background: var(--survey-form-background);
   color: var(--survey-white);
   width: 100%;
+  min-height: 600px;
 }
 
 .survey .slider-container {
@@ -615,12 +634,189 @@
 }
 
 .survey .footer-content p {
-  margin-bottom: var(--survey-spacing-small);
+  margin-bottom: 1.5rem;
   max-width: var(--survey-footer-content-max-width);
 }
 
 .survey .footer-content p:last-child {
   margin-bottom: 0;
+}
+
+.survey .footer-content .survey-thank-you {
+  margin-bottom: 0;
+}
+
+.survey .survey-learn-more {
+  color: var(--survey-back-button-color);
+  text-decoration: underline;
+  text-decoration-color: var(--survey-back-button-color);
+  text-underline-offset: 6px;
+}
+
+.survey .survey-learn-more:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--survey-back-button-color);
+  text-underline-offset: 6px;
+}
+
+.survey .survey-form .answers-title,
+.survey .survey-form .answers-subtitle {
+  color: #144633 !important;
+  max-width: 633px;
+}
+
+.survey .survey-form .answers-title {
+  font-size: 32px !important;
+}
+
+.survey .survey-form .answers-subtitle {
+  font-size: 16px !important;
+}
+
+.survey .survey-form .answers-subtitle .save-link {
+  color: #144633;
+  text-decoration: underline;
+  text-decoration-color: #144633;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Answers grid (minimal, scoped) */
+/* Header wrapper used by current JS */
+.survey .survey-form .answers-list-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* BEM-style answers list (UL/LI structure) */
+.survey .survey-form .answers-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.survey .survey-form .answers-list__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.survey .survey-form .answers-list__header h2,
+.survey .survey-form .answers-list__header p {
+  color: #144633 !important;
+  max-width: 633px;
+}
+
+.survey .survey-form .answers-list__header h2 {
+  font-size: 32px !important;
+  margin: 0;
+}
+
+.survey .survey-form .answers-list__header p {
+  font-size: 16px !important;
+  margin: 0;
+}
+
+.survey .survey-form .answers-list__list {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1120px;
+}
+
+/* Make each list item behave like a unified card with consistent height */
+.survey .survey-form .answers-list__list--item {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--answer-card-min-height);
+  border-radius: 10px; /* unify rounding across top/bottom */
+  overflow: hidden; /* ensure top bar + body share rounded corners */
+  background: #fff; /* base card background */
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%); /* card-level shadow */
+}
+
+.survey .survey-form .answers-list__list--item > span {
+  display: block;
+  background: #497527; /* top bar color per spec */
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px 14px; /* slightly larger for better touch/visual rhythm */
+  border-radius: 10px 10px 0 0;
+}
+
+.survey .survey-form .answers-list__content.answer-item {
+  background: #fff;
+  border-radius: 0; /* wrapper handles rounding */
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 16px; /* space between text and icon */
+  padding: 20px 24px; /* more breathing room */
+  flex: 1 1 auto; /* fill remaining height for consistent card size */
+}
+
+.survey .survey-form .answer-item--description {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* space between ordinal and text */
+}
+
+.survey .survey-form .answer-item--description > span {
+  color: #497527;
+  font-size: 14px;
+  text-align: left;
+}
+
+.survey .survey-form .answer-item--description div {
+  color: #333;
+  text-align: left;
+}
+
+/* Add spacing between multiple answers in grouped questions (like Q5a + Q5b) */
+.survey .survey-form .answer-item--description div > div + div {
+  margin-top: 16px;
+}
+
+/* normalize paragraphs if present in multi-line answers */
+.survey .survey-form .answer-item--description p {
+  margin: 0 0 6px;
+}
+.survey .survey-form .answer-item--description p:last-child {
+  margin-bottom: 0;
+}
+
+.survey .survey-form .answer-item--icon {
+  width: 56px;
+  height: 56px;
+  background: var(--survey-primary-color);
+  color: var(--survey-text-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+@media (width <= 1024px) {
+  .survey .survey-form .answers-list__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 640px) {
+  .survey .survey-form .answers-list__list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (width <= 768px) {
@@ -637,4 +833,160 @@
     order: 1;
     margin-bottom: var(--survey-gap-medium);
   }
+}
+
+/* Modal styles for Save Answers */
+body.survey-modal-open {
+  overflow: hidden;
+}
+
+.survey-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--survey-modal-backdrop-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  z-index: 9999;
+  backdrop-filter: blur(var(--survey-modal-backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--survey-modal-backdrop-blur));
+}
+
+.survey-modal-overlay.hidden {
+  display: none;
+}
+
+.survey-modal {
+  background: #fff;
+  width: 100%;
+  max-width: 760px;
+  border-radius: 20px;
+  padding: 56px 72px 60px;
+  position: relative;
+  text-align: center;
+  font-family: helvetica, sans-serif;
+  box-shadow: 0 12px 48px rgba(0 0 0 / 28%);
+}
+
+.survey-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: transparent !important; /* ensure no UA / inherited background */
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #144633;
+}
+
+.survey-modal-close:hover,
+.survey-modal-close:focus {
+  background: transparent !important;
+  color: #1d5a41;
+  outline: none;
+}
+
+.survey-modal-close:focus-visible {
+  outline: 2px solid #ffc107;
+  outline-offset: 2px;
+}
+
+.survey-modal-icon {
+  width: 48px;
+  height: 48px;
+  background: #dbe4d8; /* subtle desaturated green circle */
+  color: #144633;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin: 0 auto 28px;
+  box-shadow: 0 2px 4px rgba(0 0 0 / 12%);
+}
+
+.survey-modal-title {
+  font-size: 24px;
+  color: #497527;
+  margin: 0 0 18px;
+  line-height: 1.25;
+  font-weight: 400; /* normal weight per request */
+}
+
+.survey-modal-desc {
+  font-size: 14px;
+  color: #3D3D3D;
+  line-height: 1.55;
+  margin: 0 auto 16px;
+  max-width: 600px;
+  font-weight: 400;
+}
+
+.survey-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.survey-modal-action {
+  min-width: 210px;
+  padding: 14px 30px 13px; /* slight vertical optical adjustment */
+  border-radius: 32px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .25px;
+  border: 2px solid #144633;
+  background: #fff;
+  color: #144633;
+  transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.survey-modal-action.primary {
+  background: #144633;
+  color: #fff;
+  border-color: #144633;
+  box-shadow: 0 4px 16px rgba(0 0 0 / 25%);
+}
+
+/* Outline secondary remains white */
+.survey-modal-action.secondary {
+  background: #fff;
+}
+
+.survey-modal-action.primary:hover {
+  background: #1d5a41;
+  border-color: #1d5a41;
+  color: #fff;
+}
+
+.survey-modal-action.secondary:hover {
+  background: #144633;
+  color: #fff;
+}
+
+.survey-modal-action:focus-visible {
+  outline: 3px solid #ffc107;
+  outline-offset: 2px;
+}
+
+.survey-modal-close:hover {
+  color: #1d5a41;
+}
+
+@media (max-width: 640px) {
+  .survey-modal { padding: 48px 32px 52px; }
+  .survey-modal-title { font-size: 22px; }
+  .survey-modal-desc { font-size: 14px; margin-bottom: 32px; }
+  .survey-modal-actions {
+    flex-direction: column;
+  }
+  .survey-modal-action { width: 100%; }
 }
