@@ -327,6 +327,40 @@ async function createNavigationTemplate() {
   }
 }
 
+// Create fact content using faintly template (Phase 3)
+async function createFactContentTemplate(title, question) {
+  if (!USE_FAINTLY_TEMPLATES) {
+    // Fallback to original DOM creation
+    return appendChildren(createDiv(), [
+      createElement('h1', 'title', title),
+      createElement('p', 'fact-content', question),
+    ]);
+  }
+
+  try {
+    // Use faintly template
+    const factContainer = document.createElement('div');
+    factContainer.dataset.blockName = 'survey';
+
+    await renderBlock(factContainer, {
+      blockName: 'survey',
+      template: { name: 'fact-content' },
+      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+      title,
+      question,
+    });
+
+    return factContainer.firstElementChild; // Return the actual content div
+  } catch (error) {
+    logError('Fact content template failed, falling back to DOM creation:', error);
+    // Fallback to original DOM creation
+    return appendChildren(createDiv(), [
+      createElement('h1', 'title', title),
+      createElement('p', 'fact-content', question),
+    ]);
+  }
+}
+
 // Build slide: progress + content + nav
 async function createSurveyTemplate(
   progress,
@@ -382,10 +416,8 @@ async function createFactContent(questionData, currentIndex, surveyData) {
     Section, Icon, progress, questionsCompleted, totalActualQuestions,
   } = getQuestionContext(questionData, currentIndex, surveyData);
 
-  const contentElement = appendChildren(createDiv(), [
-    createElement('h1', 'title', Title),
-    createElement('p', 'fact-content', Question),
-  ]);
+  // Use new fact content template function (Phase 3)
+  const contentElement = await createFactContentTemplate(Title, Question);
 
   return createSurveyTemplate(
     progress,
