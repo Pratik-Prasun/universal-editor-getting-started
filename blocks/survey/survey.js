@@ -295,6 +295,38 @@ async function createProgressTemplate(progress, questionsCompleted, totalActualQ
   }
 }
 
+// Create navigation using faintly template (Phase 2)
+async function createNavigationTemplate() {
+  if (!USE_FAINTLY_TEMPLATES) {
+    // Fallback to original DOM creation
+    return appendChildren(createDiv('nav'), [
+      createButton('btn-back', 'Back'),
+      createButton('btn-next', 'Next'),
+    ]);
+  }
+
+  try {
+    // Use faintly template
+    const navContainer = document.createElement('div');
+    navContainer.dataset.blockName = 'survey';
+
+    await renderBlock(navContainer, {
+      blockName: 'survey',
+      template: { name: 'navigation' },
+      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+    });
+
+    return navContainer.firstElementChild; // Return the actual nav div
+  } catch (error) {
+    logError('Navigation template failed, falling back to DOM creation:', error);
+    // Fallback to original DOM creation
+    return appendChildren(createDiv('nav'), [
+      createButton('btn-back', 'Back'),
+      createButton('btn-next', 'Next'),
+    ]);
+  }
+}
+
 // Build slide: progress + content + nav
 async function createSurveyTemplate(
   progress,
@@ -313,10 +345,10 @@ async function createSurveyTemplate(
 
   const sectionTitle = createElement('span', 'section-title', section);
   const questionIcon = createDiv('question-icon', icon);
-  const navDiv = appendChildren(createDiv('nav'), [
-    createButton('btn-back', 'Back'),
-    createButton('btn-next', 'Next'),
-  ]);
+
+  // Use new navigation template function (Phase 2)
+  const navDiv = await createNavigationTemplate();
+
   const contentDiv = appendChildren(createDiv('content'), [
     sectionTitle,
     questionIcon,
