@@ -427,6 +427,34 @@ async function createSliderTemplate(contentId, options, questionText = '') {
   }
 }
 
+// Create question content using faintly template (Phase 5)
+async function createQuestionContentTemplate(title, question) {
+  if (!USE_FAINTLY_TEMPLATES) {
+    // Fallback - return null to use existing logic
+    return null;
+  }
+
+  try {
+    // Use faintly template (basic placeholder for now)
+    const questionContainer = document.createElement('div');
+    questionContainer.dataset.blockName = 'survey';
+
+    await renderBlock(questionContainer, {
+      blockName: 'survey',
+      template: { name: 'question-content' },
+      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+      title: title || '(no title)',
+      question: question || '(no question)',
+    });
+
+    return questionContainer.firstElementChild; // Return the actual content div
+  } catch (error) {
+    logError('Question content template failed, using existing logic:', error);
+    // Fallback - return null to use existing logic
+    return null;
+  }
+}
+
 // Build slide: progress + content + nav
 async function createSurveyTemplate(
   progress,
@@ -508,6 +536,9 @@ async function createQuestion(questionData, currentIndex, surveyData) {
   const {
     Section, Icon, progress, questionsCompleted, totalActualQuestions,
   } = getQuestionContext(questionData, currentIndex, surveyData);
+
+  // Phase 5.2: Test basic template (doesn't affect output yet)
+  await createQuestionContentTemplate(Title, Question);
 
   // Find all related questions (q5a, q5b, q5c, etc.)
   const relatedQuestions = findRelatedQuestions(surveyData, currentIndex);
