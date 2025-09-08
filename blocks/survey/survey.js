@@ -6,6 +6,12 @@
   Builds DOM nodes (no innerHTML), tracks progress, supports grouped questions.
 */
 
+// Import faintly for template rendering (POC/Learning)
+import { renderBlock } from '../../scripts/faintly.js';
+
+// Feature flag for faintly templates (set to false to use original code)
+const USE_FAINTLY_TEMPLATES = true;
+
 // Constants used across the survey
 const SURVEY_CONSTANTS = {
   MANDATORY_TRUE: 'TRUE',
@@ -1115,4 +1121,42 @@ export default function decorate(block) {
   }
 
   addClassIf(footer, 'footer-content');
+
+  // === FAINTLY TESTING SECTION (POC/Learning) ===
+  // This is completely separate from existing functionality
+  async function testFaintlyIntegration() {
+    if (!USE_FAINTLY_TEMPLATES) return;
+
+    try {
+      // Create a test container (doesn't affect existing survey)
+      const testContainer = document.createElement('div');
+      testContainer.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f0f0f0; padding: 10px; border: 1px solid #ccc; z-index: 9999; font-size: 12px;';
+
+      // Set the block name so faintly can find the template
+      testContainer.dataset.blockName = 'survey';
+
+      // Test faintly template rendering
+      await renderBlock(testContainer, {
+        blockName: 'survey',
+        template: { name: 'test' },
+        codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+      });
+
+      document.body.appendChild(testContainer);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (testContainer.parentNode) {
+          testContainer.parentNode.removeChild(testContainer);
+        }
+      }, 5000);
+    } catch (error) {
+      logError('Faintly test failed:', error);
+    }
+  }
+
+  // Only run test if feature flag is enabled
+  if (USE_FAINTLY_TEMPLATES) {
+    testFaintlyIntegration();
+  }
 }
