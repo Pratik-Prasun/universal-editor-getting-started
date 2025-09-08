@@ -428,7 +428,7 @@ async function createSliderTemplate(contentId, options, questionText = '') {
 }
 
 // Create question content using faintly template (Phase 5)
-async function createQuestionContentTemplate(title, question) {
+async function createQuestionContentTemplate(title, question, hasMultipleQuestions, optionType) {
   if (!USE_FAINTLY_TEMPLATES) {
     // Fallback - return null to use existing logic
     return null;
@@ -439,12 +439,19 @@ async function createQuestionContentTemplate(title, question) {
     const questionContainer = document.createElement('div');
     questionContainer.dataset.blockName = 'survey';
 
+    // Question text should be shown unless it's multiple slider questions where
+    // each has its own text
+    const shouldShowQuestionText = !(
+      hasMultipleQuestions && optionType === SURVEY_CONSTANTS.SLIDER_TYPE
+    );
+
     await renderBlock(questionContainer, {
       blockName: 'survey',
       template: { name: 'question-content' },
       codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      title: title || '(no title)',
+      title, // Pass actual title (undefined/null for conditional test)
       question: question || '(no question)',
+      questionText: shouldShowQuestionText ? question : undefined, // For conditional test
     });
 
     return questionContainer.firstElementChild; // Return the actual content div
@@ -537,12 +544,12 @@ async function createQuestion(questionData, currentIndex, surveyData) {
     Section, Icon, progress, questionsCompleted, totalActualQuestions,
   } = getQuestionContext(questionData, currentIndex, surveyData);
 
-  // Phase 5.2: Test basic template (doesn't affect output yet)
-  await createQuestionContentTemplate(Title, Question);
-
   // Find all related questions (q5a, q5b, q5c, etc.)
   const relatedQuestions = findRelatedQuestions(surveyData, currentIndex);
   const hasMultipleQuestions = relatedQuestions.length > 1;
+
+  // Phase 5.4: Test question content template with conditional logic
+  await createQuestionContentTemplate(Title, Question, hasMultipleQuestions, OptionType);
 
   const contentElement = createDiv();
 
