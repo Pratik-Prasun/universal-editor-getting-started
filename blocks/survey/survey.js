@@ -456,7 +456,7 @@ async function createQuestionContentTemplate(
     const shouldShowQuestionText = !(
       hasMultipleQuestions && optionType === SURVEY_CONSTANTS.SLIDER_TYPE
     );
-    
+
     if (shouldShowQuestionText) {
       const questionH2 = createElement('h2', 'question', question);
       contentElement.appendChild(questionH2);
@@ -470,7 +470,7 @@ async function createQuestionContentTemplate(
     } else if (optionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
       // Create options container
       const optionsDiv = createDiv('options');
-      
+
       if (hasMultipleQuestions) {
         // Create multiple related sliders using templates
         const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
@@ -487,7 +487,7 @@ async function createQuestionContentTemplate(
         const slider = await createSliderTemplate(contentId, options);
         optionsDiv.appendChild(slider);
       }
-      
+
       contentElement.appendChild(optionsDiv);
     }
 
@@ -499,8 +499,8 @@ async function createQuestionContentTemplate(
   }
 }
 
-// Build slide: progress + content + nav
-async function createSurveyTemplate(
+// Build slide: progress + content + nav (Original implementation for fallback)
+async function createSurveyTemplateFallback(
   progress,
   questionsCompleted,
   totalActualQuestions,
@@ -529,6 +529,81 @@ async function createSurveyTemplate(
   ]);
 
   return appendChildren(createDiv('survey-form'), [progressDiv, contentDiv]);
+}
+
+// Phase 6: Create main survey template
+async function createMainSurveyTemplate(
+  progress,
+  questionsCompleted,
+  totalActualQuestions,
+  section,
+  icon,
+  contentElement,
+) {
+  if (!USE_FAINTLY_TEMPLATES) {
+    // Fallback to original createSurveyTemplate logic
+    return createSurveyTemplateFallback(
+      progress,
+      questionsCompleted,
+      totalActualQuestions,
+      section,
+      icon,
+      contentElement,
+    );
+  }
+
+  try {
+    // Use main faintly template
+    const surveyContainer = document.createElement('div');
+    surveyContainer.dataset.blockName = 'survey';
+
+    await renderBlock(surveyContainer, {
+      blockName: 'survey',
+      template: { name: 'main' },
+      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+      // Progress data for included progress template
+      progress,
+      questionsCompleted,
+      totalActualQuestions,
+      // Content data
+      section,
+      icon,
+      contentElement, // This will be inserted via data-fly-content
+    });
+
+    return surveyContainer.firstElementChild; // Return the actual survey-form div
+  } catch (error) {
+    logError('Main survey template failed, falling back to DOM creation:', error);
+    // Fallback to original createSurveyTemplate logic
+    return createSurveyTemplateFallback(
+      progress,
+      questionsCompleted,
+      totalActualQuestions,
+      section,
+      icon,
+      contentElement,
+    );
+  }
+}
+
+// Build slide: progress + content + nav (Phase 6: Now uses main template)
+async function createSurveyTemplate(
+  progress,
+  questionsCompleted,
+  totalActualQuestions,
+  section,
+  icon,
+  contentElement,
+) {
+  // Phase 6: Use main template
+  return createMainSurveyTemplate(
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
+    section,
+    icon,
+    contentElement,
+  );
 }
 
 // Common props + progress

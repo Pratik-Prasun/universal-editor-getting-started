@@ -72,10 +72,22 @@
   </div>
 </template>
 
-<!-- Main survey template - will be developed incrementally -->
+<!-- Main Survey Template - Phase 6: Complete survey layout -->
 <template data-fly-name="main">
-  <div class="survey-container">
-    <p>Main survey template placeholder</p>
-    <p>Block: ${blockName}</p>
+  <div class="survey-form">
+    <!-- Progress section -->
+    <div data-fly-include="progress"></div>
+    
+    <!-- Content section -->
+    <div class="content">
+      <span class="section-title">${section}</span>
+      <div class="question-icon">${icon}</div>
+      
+      <!-- Dynamic content area - will be populated by contentElement -->
+      <div data-fly-content="contentElement"></div>
+      
+      <!-- Navigation section -->
+      <div data-fly-include="navigation"></div>
+    </div>
   </div>
 </template>
