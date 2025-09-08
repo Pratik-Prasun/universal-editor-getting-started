@@ -1,11 +1,20 @@
-<!-- Faintly Template for Survey Block -->
-<!-- This is a basic template structure for learning faintly -->
+<!-- Faintly Templates for Survey Block -->
 
-<template data-fly-name="test">
-  <div class="faintly-test">
-    <h2>Faintly Template Test</h2>
-    <p>Template is working! Block name: ${blockName}</p>
-    <p>Current mode: Template</p>
+<!-- Progress Bar Template - Phase 2 Step 1 -->
+<template data-fly-name="progress">
+  <div class="progress">
+    <div class="progress-track">
+      <div class="progress-fill" style="width: ${progress}%"></div>
+    </div>
+    <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
+  </div>
+</template>
+
+<!-- Navigation Template - Phase 2 Step 2 -->
+<template data-fly-name="navigation">
+  <div class="nav">
+    <button class="btn-back" type="button">Back</button>
+    <button class="btn-next" type="button">Next</button>
   </div>
 </template>
 

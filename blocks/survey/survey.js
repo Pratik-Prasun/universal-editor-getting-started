@@ -242,8 +242,61 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
+// Create progress bar using faintly template (Phase 2)
+async function createProgressTemplate(progress, questionsCompleted, totalActualQuestions) {
+  if (!USE_FAINTLY_TEMPLATES) {
+    // Fallback to original DOM creation
+    const progressFill = createDiv('progress-fill');
+    progressFill.style.width = `${progress}%`;
+    const progressTrack = appendChildren(createDiv('progress-track'), [
+      progressFill,
+    ]);
+    const progressCounter = createDiv(
+      'progress-counter',
+      `${questionsCompleted}/${totalActualQuestions}`,
+    );
+    return appendChildren(createDiv('progress'), [
+      progressTrack,
+      progressCounter,
+    ]);
+  }
+
+  try {
+    // Use faintly template
+    const progressContainer = document.createElement('div');
+    progressContainer.dataset.blockName = 'survey';
+
+    await renderBlock(progressContainer, {
+      blockName: 'survey',
+      template: { name: 'progress' },
+      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+      progress,
+      questionsCompleted,
+      totalActualQuestions,
+    });
+
+    return progressContainer.firstElementChild; // Return the actual progress div
+  } catch (error) {
+    logError('Progress template failed, falling back to DOM creation:', error);
+    // Fallback to original DOM creation
+    const progressFill = createDiv('progress-fill');
+    progressFill.style.width = `${progress}%`;
+    const progressTrack = appendChildren(createDiv('progress-track'), [
+      progressFill,
+    ]);
+    const progressCounter = createDiv(
+      'progress-counter',
+      `${questionsCompleted}/${totalActualQuestions}`,
+    );
+    return appendChildren(createDiv('progress'), [
+      progressTrack,
+      progressCounter,
+    ]);
+  }
+}
+
 // Build slide: progress + content + nav
-function createSurveyTemplate(
+async function createSurveyTemplate(
   progress,
   questionsCompleted,
   totalActualQuestions,
@@ -251,19 +304,12 @@ function createSurveyTemplate(
   icon,
   contentElement,
 ) {
-  const progressFill = createDiv('progress-fill');
-  progressFill.style.width = `${progress}%`;
-  const progressTrack = appendChildren(createDiv('progress-track'), [
-    progressFill,
-  ]);
-  const progressCounter = createDiv(
-    'progress-counter',
-    `${questionsCompleted}/${totalActualQuestions}`,
+  // Use new progress template function (Phase 2)
+  const progressDiv = await createProgressTemplate(
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
   );
-  const progressDiv = appendChildren(createDiv('progress'), [
-    progressTrack,
-    progressCounter,
-  ]);
 
   const sectionTitle = createElement('span', 'section-title', section);
   const questionIcon = createDiv('question-icon', icon);
@@ -298,7 +344,7 @@ function getQuestionContext(questionData, currentIndex, surveyData) {
 }
 
 // Fact slide
-function createFactContent(questionData, currentIndex, surveyData) {
+async function createFactContent(questionData, currentIndex, surveyData) {
   const { Title, Question } = questionData;
   const {
     Section, Icon, progress, questionsCompleted, totalActualQuestions,
@@ -320,7 +366,7 @@ function createFactContent(questionData, currentIndex, surveyData) {
 }
 
 // Interactive slide (radio/slider, supports grouped sliders)
-function createQuestion(questionData, currentIndex, surveyData) {
+async function createQuestion(questionData, currentIndex, surveyData) {
   const {
     ContentType, Title, Question, Options, OptionType, ContentId,
   } = questionData;
@@ -815,11 +861,11 @@ export default function decorate(block) {
   }
 
   // Render a question slide and bind listeners
-  function showQuestion(index) {
+  async function showQuestion(index) {
     currentQuestionIndex = index;
     const questionData = surveyData[index];
 
-    const questionElement = createQuestion(questionData, index, surveyData);
+    const questionElement = await createQuestion(questionData, index, surveyData);
     // Keep container class
     surveyArea.className = 'survey-area';
     replaceContent(surveyArea, questionElement);
@@ -846,7 +892,7 @@ export default function decorate(block) {
       // Start survey
       currentQuestionIndex = 0;
       surveyAnswers = {};
-      showQuestion(0);
+      await showQuestion(0);
     } catch (error) {
       logError('Failed to load survey data:', error);
       // Error logged to console - no user-facing alert needed for now
@@ -900,7 +946,7 @@ export default function decorate(block) {
   // Survey navigation event handlers
   if (surveyArea) {
     // Handle back navigation
-    surveyArea.addEventListener('survey:back', () => {
+    surveyArea.addEventListener('survey:back', async () => {
       if (currentQuestionIndex === 0) {
         // Go back to original content (trusted content, can use innerHTML)
         replaceContent(surveyArea);
@@ -908,16 +954,16 @@ export default function decorate(block) {
         attachGetStartedListener();
       } else {
         const prevIndex = findGroupStart(currentQuestionIndex - 1);
-        showQuestion(prevIndex);
+        await showQuestion(prevIndex);
       }
     });
 
     // Handle next/forward navigation
-    surveyArea.addEventListener('survey:next', () => {
+    surveyArea.addEventListener('survey:next', async () => {
       const nextIndex = getNextQuestionIndex();
 
       if (nextIndex < surveyData.length) {
-        showQuestion(nextIndex);
+        await showQuestion(nextIndex);
       } else {
         // Done: mark progress UI and show summary
         const progressDiv = surveyArea.querySelector('.progress');
@@ -1121,42 +1167,4 @@ export default function decorate(block) {
   }
 
   addClassIf(footer, 'footer-content');
-
-  // === FAINTLY TESTING SECTION (POC/Learning) ===
-  // This is completely separate from existing functionality
-  async function testFaintlyIntegration() {
-    if (!USE_FAINTLY_TEMPLATES) return;
-
-    try {
-      // Create a test container (doesn't affect existing survey)
-      const testContainer = document.createElement('div');
-      testContainer.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f0f0f0; padding: 10px; border: 1px solid #ccc; z-index: 9999; font-size: 12px;';
-
-      // Set the block name so faintly can find the template
-      testContainer.dataset.blockName = 'survey';
-
-      // Test faintly template rendering
-      await renderBlock(testContainer, {
-        blockName: 'survey',
-        template: { name: 'test' },
-        codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      });
-
-      document.body.appendChild(testContainer);
-
-      // Auto-remove after 5 seconds
-      setTimeout(() => {
-        if (testContainer.parentNode) {
-          testContainer.parentNode.removeChild(testContainer);
-        }
-      }, 5000);
-    } catch (error) {
-      logError('Faintly test failed:', error);
-    }
-  }
-
-  // Only run test if feature flag is enabled
-  if (USE_FAINTLY_TEMPLATES) {
-    testFaintlyIntegration();
-  }
 }
