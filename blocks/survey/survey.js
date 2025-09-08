@@ -427,37 +427,74 @@ async function createSliderTemplate(contentId, options, questionText = '') {
   }
 }
 
-// Create question content using faintly template (Phase 5)
-async function createQuestionContentTemplate(title, question, hasMultipleQuestions, optionType) {
+// Phase 5.6: Create question content using templates with direct content creation
+async function createQuestionContentTemplate(
+  title,
+  question,
+  hasMultipleQuestions,
+  optionType,
+  contentId,
+  options,
+  relatedQuestions,
+) {
   if (!USE_FAINTLY_TEMPLATES) {
     // Fallback - return null to use existing logic
     return null;
   }
 
   try {
-    // Use faintly template (basic placeholder for now)
-    const questionContainer = document.createElement('div');
-    questionContainer.dataset.blockName = 'survey';
+    // Create main content element
+    const contentElement = createDiv();
 
-    // Question text should be shown unless it's multiple slider questions where
-    // each has its own text
+    // Phase 5.6: Add title and question using DOM creation (templates for these are simple)
+    if (title) {
+      const titleH1 = createElement('h1', 'title', title);
+      contentElement.appendChild(titleH1);
+    }
+
+    // Add main question text (unless it's multiple slider questions where each has its own text)
     const shouldShowQuestionText = !(
       hasMultipleQuestions && optionType === SURVEY_CONSTANTS.SLIDER_TYPE
     );
+    
+    if (shouldShowQuestionText) {
+      const questionH2 = createElement('h2', 'question', question);
+      contentElement.appendChild(questionH2);
+    }
 
-    await renderBlock(questionContainer, {
-      blockName: 'survey',
-      template: { name: 'question-content' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      title, // Pass actual title (undefined/null for conditional test)
-      question: question || '(no question)',
-      questionText: shouldShowQuestionText ? question : undefined, // For conditional test
-    });
+    // Phase 5.6: Use appropriate template for options content
+    if (optionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+      // Use radio options template
+      const radioOptions = await createRadioOptionsTemplate(contentId, options);
+      contentElement.appendChild(radioOptions);
+    } else if (optionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      // Create options container
+      const optionsDiv = createDiv('options');
+      
+      if (hasMultipleQuestions) {
+        // Create multiple related sliders using templates
+        const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
+          relatedQuestion.ContentId,
+          relatedQuestion.Options,
+          relatedQuestion.Question,
+        ));
+        const sliders = await Promise.all(sliderPromises);
+        sliders.forEach((slider) => {
+          optionsDiv.appendChild(slider);
+        });
+      } else {
+        // Single slider using template
+        const slider = await createSliderTemplate(contentId, options);
+        optionsDiv.appendChild(slider);
+      }
+      
+      contentElement.appendChild(optionsDiv);
+    }
 
-    return questionContainer.firstElementChild; // Return the actual content div
+    // Question content created successfully using templates
+    return contentElement;
   } catch (error) {
-    logError('Question content template failed, using existing logic:', error);
-    // Fallback - return null to use existing logic
+    logError('Question content template creation failed, using fallback:', error);
     return null;
   }
 }
@@ -548,49 +585,64 @@ async function createQuestion(questionData, currentIndex, surveyData) {
   const relatedQuestions = findRelatedQuestions(surveyData, currentIndex);
   const hasMultipleQuestions = relatedQuestions.length > 1;
 
-  // Phase 5.4: Test question content template with conditional logic
-  await createQuestionContentTemplate(Title, Question, hasMultipleQuestions, OptionType);
+  // Phase 5.6: Try to use question content template first
+  const templateContent = await createQuestionContentTemplate(
+    Title,
+    Question,
+    hasMultipleQuestions,
+    OptionType,
+    ContentId,
+    Options,
+    relatedQuestions,
+  );
 
-  const contentElement = createDiv();
+  // Phase 5.6: Use template result if available, otherwise fallback to DOM creation
+  let contentElement;
+  if (templateContent) {
+    contentElement = templateContent;
+  } else {
+    // Fallback to existing DOM creation logic
+    contentElement = createDiv();
 
-  // Add title if present
-  if (Title) {
-    const titleH1 = createElement('h1', 'title', Title);
-    contentElement.appendChild(titleH1);
-  }
+    // Add title if present
+    if (Title) {
+      const titleH1 = createElement('h1', 'title', Title);
+      contentElement.appendChild(titleH1);
+    }
 
-  // Add main question text (unless it's multiple slider questions where each has its own text)
-  if (!(hasMultipleQuestions && OptionType === SURVEY_CONSTANTS.SLIDER_TYPE)) {
-    const questionH2 = createElement('h2', 'question', Question);
-    contentElement.appendChild(questionH2);
-  }
+    // Add main question text (unless it's multiple slider questions where each has its own text)
+    if (!(hasMultipleQuestions && OptionType === SURVEY_CONSTANTS.SLIDER_TYPE)) {
+      const questionH2 = createElement('h2', 'question', Question);
+      contentElement.appendChild(questionH2);
+    }
 
-  // Create options container
-  const optionsDiv = createDiv('options');
+    // Create options container
+    const optionsDiv = createDiv('options');
 
-  if (OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
-    // For radio buttons, only use the first question (no grouping for radio)
-    const radioOptions = await createRadioOptionsTemplate(ContentId, Options);
-    // Replace the empty optionsDiv with the template result
-    contentElement.appendChild(radioOptions);
-  } else if (OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
-    if (hasMultipleQuestions) {
-      // Create multiple related sliders dynamically
-      const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
-        relatedQuestion.ContentId,
-        relatedQuestion.Options,
-        relatedQuestion.Question,
-      ));
-      const sliders = await Promise.all(sliderPromises);
-      sliders.forEach((slider) => {
+    if (OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+      // For radio buttons, only use the first question (no grouping for radio)
+      const radioOptions = await createRadioOptionsTemplate(ContentId, Options);
+      // Replace the empty optionsDiv with the template result
+      contentElement.appendChild(radioOptions);
+    } else if (OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+      if (hasMultipleQuestions) {
+        // Create multiple related sliders dynamically
+        const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
+          relatedQuestion.ContentId,
+          relatedQuestion.Options,
+          relatedQuestion.Question,
+        ));
+        const sliders = await Promise.all(sliderPromises);
+        sliders.forEach((slider) => {
+          optionsDiv.appendChild(slider);
+        });
+        contentElement.appendChild(optionsDiv);
+      } else {
+        // Single slider
+        const slider = await createSliderTemplate(ContentId, Options);
         optionsDiv.appendChild(slider);
-      });
-      contentElement.appendChild(optionsDiv);
-    } else {
-      // Single slider
-      const slider = await createSliderTemplate(ContentId, Options);
-      optionsDiv.appendChild(slider);
-      contentElement.appendChild(optionsDiv);
+        contentElement.appendChild(optionsDiv);
+      }
     }
   }
 

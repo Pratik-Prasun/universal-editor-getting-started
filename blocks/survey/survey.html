@@ -49,12 +49,26 @@
   </div>
 </template>
 
+<!-- Slider Content Template - Phase 5.5 for handling single or multiple sliders -->
+<template data-fly-name="slider-content">
+  <div class="options">
+    <!-- Single slider case -->
+    <div data-fly-test="isSingleSlider" data-fly-include="slider"></div>
+    
+    <!-- Multiple sliders case -->
+    <div data-fly-test="isMultipleSliders" data-fly-repeat.sliderData="sliders" data-fly-include="slider"></div>
+  </div>
+</template>
+
 <!-- Question Content Template - Phase 5 Step 2 -->
 <template data-fly-name="question-content">
   <div>
     <h1 class="title" data-fly-test="title">${title}</h1>
     <h2 class="question" data-fly-test="questionText">${question}</h2>
-    <p>Content placeholder - Phase 5.4</p>
+    
+    <!-- Phase 5.5: Conditional content inclusion for radio and slider templates -->
+    <div data-fly-test="isRadioType" data-fly-include="radio-options"></div>
+    <div data-fly-test="isSliderType" data-fly-include="slider-content"></div>
   </div>
 </template>
 
