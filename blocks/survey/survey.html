@@ -26,6 +26,29 @@
   </div>
 </template>
 
+<!-- Radio Options Template - Phase 4 Step 1 -->
+<template data-fly-name="radio-options">
+  <div class="options">
+    <div class="option" data-fly-repeat.option="options">
+      <input type="radio" id="${option.id}" name="${contentId}" value="${option.value}" />
+      <label for="${option.id}">${option.text}</label>
+    </div>
+  </div>
+</template>
+
+<!-- Slider Template - Phase 4 Step 2 -->
+<template data-fly-name="slider">
+  <div class="slider-container">
+    <h3 class="slider-question" data-fly-test="questionText">${questionText}</h3>
+    <div class="slider-track-wrapper">
+      <div class="slider-labels">
+        <span data-fly-repeat.option="options">${option}</span>
+      </div>
+      <input class="slider" type="range" id="${contentId}" name="${contentId}" min="0" max="${optionsLength}" value="0" data-options="${optionsJson}" />
+    </div>
+  </div>
+</template>
+
 <!-- Main survey template - will be developed incrementally -->
 <template data-fly-name="main">
   <div class="survey-container">
