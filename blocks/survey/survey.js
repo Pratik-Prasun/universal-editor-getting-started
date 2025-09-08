@@ -1,5 +1,3 @@
-/* Note: console.error is used for error tracking and monitoring */
-
 /*
   Survey block for AEM Edge Delivery Services.
   Radios, sliders, and read-only "fact" slides.
@@ -8,9 +6,6 @@
 
 // Import faintly for template rendering (POC/Learning)
 import { renderBlock } from '../../scripts/faintly.js';
-
-// Feature flag for faintly templates (set to false to use original code)
-const USE_FAINTLY_TEMPLATES = true;
 
 // Constants used across the survey
 const SURVEY_CONSTANTS = {
@@ -21,17 +16,16 @@ const SURVEY_CONSTANTS = {
   RADIO_TYPE: 'radio',
 };
 
-// Error logger - always logs errors to console for monitoring
-function logError(...args) {
-  // eslint-disable-next-line no-console
-  console.error(...args);
-}
+// Destructure for cleaner access
+const {
+  MANDATORY_TRUE, QUESTION_TYPE, FACT_TYPE, SLIDER_TYPE, RADIO_TYPE,
+} = SURVEY_CONSTANTS;
 
 // Required only if mandatory and it's an actual question (facts don't count)
 function isAnswerRequired(question) {
   return (
-    question.Mandatory === SURVEY_CONSTANTS.MANDATORY_TRUE
-    && question.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE
+    question.Mandatory === MANDATORY_TRUE
+    && question.ContentType === QUESTION_TYPE
   );
 }
 
@@ -140,56 +134,6 @@ function replaceContent(container, newContent) {
   }
 }
 
-// Build radio options for a question
-function createRadioOptions(contentId, options) {
-  const optionElements = options.map((option) => {
-    const input = createElement('input', '', '', {
-      type: 'radio',
-      id: `${contentId}-${option.replace(/\s+/g, '-').toLowerCase()}`,
-      name: contentId,
-      value: option,
-    });
-
-    const label = createElement('label', '', option, {
-      for: input.id,
-    });
-
-    return appendChildren(createDiv('option'), [input, label]);
-  });
-
-  return appendChildren(createDiv('options'), optionElements);
-}
-
-// Slider + labels (labels stored in data-options)
-function createSlider(contentId, options, questionText = '') {
-  const elements = [];
-
-  if (questionText) {
-    elements.push(createElement('h3', 'slider-question', questionText));
-  }
-
-  const labelSpans = options.map((option) => createElement('span', '', option));
-  const labelsDiv = appendChildren(createDiv('slider-labels'), labelSpans);
-
-  const slider = createElement('input', 'slider', '', {
-    type: 'range',
-    id: contentId,
-    name: contentId,
-    min: '0',
-    max: String(options.length - 1),
-    value: '0',
-    'data-options': JSON.stringify(options),
-  });
-
-  const trackWrapper = appendChildren(createDiv('slider-track-wrapper'), [
-    labelsDiv,
-    slider,
-  ]);
-
-  elements.push(trackWrapper);
-  return appendChildren(createDiv('slider-container'), elements);
-}
-
 // Fetch survey JSON; supports pretty hrefs via /paths.json
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
@@ -242,192 +186,50 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
-// Create progress bar using faintly template (Phase 2)
-async function createProgressTemplate(progress, questionsCompleted, totalActualQuestions) {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback to original DOM creation
-    const progressFill = createDiv('progress-fill');
-    progressFill.style.width = `${progress}%`;
-    const progressTrack = appendChildren(createDiv('progress-track'), [
-      progressFill,
-    ]);
-    const progressCounter = createDiv(
-      'progress-counter',
-      `${questionsCompleted}/${totalActualQuestions}`,
-    );
-    return appendChildren(createDiv('progress'), [
-      progressTrack,
-      progressCounter,
-    ]);
-  }
+// Helper function to create template containers (DRY pattern)
+async function createTemplateContainer(templateName, templateData) {
+  const container = document.createElement('div');
+  container.dataset.blockName = 'survey';
 
-  try {
-    // Use faintly template
-    const progressContainer = document.createElement('div');
-    progressContainer.dataset.blockName = 'survey';
+  await renderBlock(container, {
+    blockName: 'survey',
+    template: { name: templateName },
+    codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
+    ...templateData,
+  });
 
-    await renderBlock(progressContainer, {
-      blockName: 'survey',
-      template: { name: 'progress' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      progress,
-      questionsCompleted,
-      totalActualQuestions,
-    });
-
-    return progressContainer.firstElementChild; // Return the actual progress div
-  } catch (error) {
-    logError('Progress template failed, falling back to DOM creation:', error);
-    // Fallback to original DOM creation
-    const progressFill = createDiv('progress-fill');
-    progressFill.style.width = `${progress}%`;
-    const progressTrack = appendChildren(createDiv('progress-track'), [
-      progressFill,
-    ]);
-    const progressCounter = createDiv(
-      'progress-counter',
-      `${questionsCompleted}/${totalActualQuestions}`,
-    );
-    return appendChildren(createDiv('progress'), [
-      progressTrack,
-      progressCounter,
-    ]);
-  }
+  return container.firstElementChild;
 }
 
-// Create navigation using faintly template (Phase 2)
-async function createNavigationTemplate() {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback to original DOM creation
-    return appendChildren(createDiv('nav'), [
-      createButton('btn-back', 'Back'),
-      createButton('btn-next', 'Next'),
-    ]);
-  }
-
-  try {
-    // Use faintly template
-    const navContainer = document.createElement('div');
-    navContainer.dataset.blockName = 'survey';
-
-    await renderBlock(navContainer, {
-      blockName: 'survey',
-      template: { name: 'navigation' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-    });
-
-    return navContainer.firstElementChild; // Return the actual nav div
-  } catch (error) {
-    logError('Navigation template failed, falling back to DOM creation:', error);
-    // Fallback to original DOM creation
-    return appendChildren(createDiv('nav'), [
-      createButton('btn-back', 'Back'),
-      createButton('btn-next', 'Next'),
-    ]);
-  }
-}
-
-// Create fact content using faintly template (Phase 3)
+// Create fact content template
 async function createFactContentTemplate(title, question) {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback to original DOM creation
-    return appendChildren(createDiv(), [
-      createElement('h1', 'title', title),
-      createElement('p', 'fact-content', question),
-    ]);
-  }
-
-  try {
-    // Use faintly template
-    const factContainer = document.createElement('div');
-    factContainer.dataset.blockName = 'survey';
-
-    await renderBlock(factContainer, {
-      blockName: 'survey',
-      template: { name: 'fact-content' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      title,
-      question,
-    });
-
-    return factContainer.firstElementChild; // Return the actual content div
-  } catch (error) {
-    logError('Fact content template failed, falling back to DOM creation:', error);
-    // Fallback to original DOM creation
-    return appendChildren(createDiv(), [
-      createElement('h1', 'title', title),
-      createElement('p', 'fact-content', question),
-    ]);
-  }
+  return createTemplateContainer('fact-content', { title, question });
 }
 
-// Create radio options using faintly template (Phase 4)
+// Create radio options template
 async function createRadioOptionsTemplate(contentId, options) {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback to original DOM creation
-    return createRadioOptions(contentId, options);
-  }
+  // Pre-process options to include computed IDs
+  const processedOptions = options.map((option) => ({
+    text: option,
+    value: option,
+    id: `${contentId}-${option.replace(/\s+/g, '-').toLowerCase()}`,
+  }));
 
-  try {
-    // Pre-process options to include computed IDs
-    const processedOptions = options.map((option) => ({
-      text: option,
-      value: option,
-      id: `${contentId}-${option.replace(/\s+/g, '-').toLowerCase()}`,
-    }));
-
-    // Use faintly template
-    const radioContainer = document.createElement('div');
-    radioContainer.dataset.blockName = 'survey';
-
-    await renderBlock(radioContainer, {
-      blockName: 'survey',
-      template: { name: 'radio-options' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      contentId,
-      options: processedOptions,
-    });
-
-    return radioContainer.firstElementChild; // Return the actual options div
-  } catch (error) {
-    logError('Radio options template failed, falling back to DOM creation:', error);
-    // Fallback to original DOM creation
-    return createRadioOptions(contentId, options);
-  }
+  return createTemplateContainer('radio-options', { contentId, options: processedOptions });
 }
 
-// Create slider using faintly template (Phase 4)
+// Create slider template
 async function createSliderTemplate(contentId, options, questionText = '') {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback to original DOM creation
-    return createSlider(contentId, options, questionText);
-  }
-
-  try {
-    // Use faintly template
-    const sliderContainer = document.createElement('div');
-    sliderContainer.dataset.blockName = 'survey';
-
-    await renderBlock(sliderContainer, {
-      blockName: 'survey',
-      template: { name: 'slider' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      contentId,
-      options,
-      questionText,
-      optionsLength: String(options.length - 1),
-      optionsJson: JSON.stringify(options),
-    });
-
-    return sliderContainer.firstElementChild; // Return the actual slider-container div
-  } catch (error) {
-    logError('Slider template failed, falling back to DOM creation:', error);
-    // Fallback to original DOM creation
-    return createSlider(contentId, options, questionText);
-  }
+  return createTemplateContainer('slider', {
+    contentId,
+    options,
+    questionText,
+    optionsLength: String(options.length - 1),
+    optionsJson: JSON.stringify(options),
+  });
 }
 
-// Phase 5.6: Create question content using templates with direct content creation
+// Create question content template
 async function createQuestionContentTemplate(
   title,
   question,
@@ -437,101 +239,59 @@ async function createQuestionContentTemplate(
   options,
   relatedQuestions,
 ) {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback - return null to use existing logic
-    return null;
+  // Create main content element
+  const contentElement = createDiv();
+
+  // Add title and question using DOM creation (templates for these are simple)
+  if (title) {
+    const titleH1 = createElement('h1', 'title', title);
+    contentElement.appendChild(titleH1);
   }
 
-  try {
-    // Create main content element
-    const contentElement = createDiv();
-
-    // Phase 5.6: Add title and question using DOM creation (templates for these are simple)
-    if (title) {
-      const titleH1 = createElement('h1', 'title', title);
-      contentElement.appendChild(titleH1);
-    }
-
-    // Add main question text (unless it's multiple slider questions where each has its own text)
-    const shouldShowQuestionText = !(
-      hasMultipleQuestions && optionType === SURVEY_CONSTANTS.SLIDER_TYPE
-    );
-
-    if (shouldShowQuestionText) {
-      const questionH2 = createElement('h2', 'question', question);
-      contentElement.appendChild(questionH2);
-    }
-
-    // Phase 5.6: Use appropriate template for options content
-    if (optionType === SURVEY_CONSTANTS.RADIO_TYPE) {
-      // Use radio options template
-      const radioOptions = await createRadioOptionsTemplate(contentId, options);
-      contentElement.appendChild(radioOptions);
-    } else if (optionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
-      // Create options container
-      const optionsDiv = createDiv('options');
-
-      if (hasMultipleQuestions) {
-        // Create multiple related sliders using templates
-        const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
-          relatedQuestion.ContentId,
-          relatedQuestion.Options,
-          relatedQuestion.Question,
-        ));
-        const sliders = await Promise.all(sliderPromises);
-        sliders.forEach((slider) => {
-          optionsDiv.appendChild(slider);
-        });
-      } else {
-        // Single slider using template
-        const slider = await createSliderTemplate(contentId, options);
-        optionsDiv.appendChild(slider);
-      }
-
-      contentElement.appendChild(optionsDiv);
-    }
-
-    // Question content created successfully using templates
-    return contentElement;
-  } catch (error) {
-    logError('Question content template creation failed, using fallback:', error);
-    return null;
-  }
-}
-
-// Build slide: progress + content + nav (Original implementation for fallback)
-async function createSurveyTemplateFallback(
-  progress,
-  questionsCompleted,
-  totalActualQuestions,
-  section,
-  icon,
-  contentElement,
-) {
-  // Use new progress template function (Phase 2)
-  const progressDiv = await createProgressTemplate(
-    progress,
-    questionsCompleted,
-    totalActualQuestions,
+  // Add main question text (unless it's multiple slider questions where each has its own text)
+  const shouldShowQuestionText = !(
+    hasMultipleQuestions && optionType === SLIDER_TYPE
   );
 
-  const sectionTitle = createElement('span', 'section-title', section);
-  const questionIcon = createDiv('question-icon', icon);
+  if (shouldShowQuestionText) {
+    const questionH2 = createElement('h2', 'question', question);
+    contentElement.appendChild(questionH2);
+  }
 
-  // Use new navigation template function (Phase 2)
-  const navDiv = await createNavigationTemplate();
+  // Use appropriate template for options content
+  if (optionType === RADIO_TYPE) {
+    // Use radio options template
+    const radioOptions = await createRadioOptionsTemplate(contentId, options);
+    contentElement.appendChild(radioOptions);
+  } else if (optionType === SLIDER_TYPE) {
+    // Create options container
+    const optionsDiv = createDiv('options');
 
-  const contentDiv = appendChildren(createDiv('content'), [
-    sectionTitle,
-    questionIcon,
-    contentElement,
-    navDiv,
-  ]);
+    if (hasMultipleQuestions) {
+      // Create multiple related sliders using templates
+      const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
+        relatedQuestion.ContentId,
+        relatedQuestion.Options,
+        relatedQuestion.Question,
+      ));
+      const sliders = await Promise.all(sliderPromises);
+      sliders.forEach((slider) => {
+        optionsDiv.appendChild(slider);
+      });
+    } else {
+      // Single slider using template
+      const slider = await createSliderTemplate(contentId, options);
+      optionsDiv.appendChild(slider);
+    }
 
-  return appendChildren(createDiv('survey-form'), [progressDiv, contentDiv]);
+    contentElement.appendChild(optionsDiv);
+  }
+
+  // Question content created successfully using templates
+  return contentElement;
 }
 
-// Phase 6: Create main survey template
+// Build main survey template
 async function createMainSurveyTemplate(
   progress,
   questionsCompleted,
@@ -540,53 +300,17 @@ async function createMainSurveyTemplate(
   icon,
   contentElement,
 ) {
-  if (!USE_FAINTLY_TEMPLATES) {
-    // Fallback to original createSurveyTemplate logic
-    return createSurveyTemplateFallback(
-      progress,
-      questionsCompleted,
-      totalActualQuestions,
-      section,
-      icon,
-      contentElement,
-    );
-  }
-
-  try {
-    // Use main faintly template
-    const surveyContainer = document.createElement('div');
-    surveyContainer.dataset.blockName = 'survey';
-
-    await renderBlock(surveyContainer, {
-      blockName: 'survey',
-      template: { name: 'main' },
-      codeBasePath: window.hlx ? window.hlx.codeBasePath : '',
-      // Progress data for included progress template
-      progress,
-      questionsCompleted,
-      totalActualQuestions,
-      // Content data
-      section,
-      icon,
-      contentElement, // This will be inserted via data-fly-content
-    });
-
-    return surveyContainer.firstElementChild; // Return the actual survey-form div
-  } catch (error) {
-    logError('Main survey template failed, falling back to DOM creation:', error);
-    // Fallback to original createSurveyTemplate logic
-    return createSurveyTemplateFallback(
-      progress,
-      questionsCompleted,
-      totalActualQuestions,
-      section,
-      icon,
-      contentElement,
-    );
-  }
+  return createTemplateContainer('main', {
+    progress,
+    questionsCompleted,
+    totalActualQuestions,
+    section,
+    icon,
+    contentElement,
+  });
 }
 
-// Build slide: progress + content + nav (Phase 6: Now uses main template)
+// Build survey template wrapper
 async function createSurveyTemplate(
   progress,
   questionsCompleted,
@@ -595,7 +319,6 @@ async function createSurveyTemplate(
   icon,
   contentElement,
 ) {
-  // Phase 6: Use main template
   return createMainSurveyTemplate(
     progress,
     questionsCompleted,
@@ -629,7 +352,7 @@ async function createFactContent(questionData, currentIndex, surveyData) {
     Section, Icon, progress, questionsCompleted, totalActualQuestions,
   } = getQuestionContext(questionData, currentIndex, surveyData);
 
-  // Use new fact content template function (Phase 3)
+  // Use fact content template function
   const contentElement = await createFactContentTemplate(Title, Question);
 
   return createSurveyTemplate(
@@ -648,7 +371,7 @@ async function createQuestion(questionData, currentIndex, surveyData) {
     ContentType, Title, Question, Options, OptionType, ContentId,
   } = questionData;
 
-  if (ContentType === SURVEY_CONSTANTS.FACT_TYPE) {
+  if (ContentType === FACT_TYPE) {
     return createFactContent(questionData, currentIndex, surveyData);
   }
 
@@ -660,8 +383,8 @@ async function createQuestion(questionData, currentIndex, surveyData) {
   const relatedQuestions = findRelatedQuestions(surveyData, currentIndex);
   const hasMultipleQuestions = relatedQuestions.length > 1;
 
-  // Phase 5.6: Try to use question content template first
-  const templateContent = await createQuestionContentTemplate(
+  // Use question content template
+  const contentElement = await createQuestionContentTemplate(
     Title,
     Question,
     hasMultipleQuestions,
@@ -670,56 +393,6 @@ async function createQuestion(questionData, currentIndex, surveyData) {
     Options,
     relatedQuestions,
   );
-
-  // Phase 5.6: Use template result if available, otherwise fallback to DOM creation
-  let contentElement;
-  if (templateContent) {
-    contentElement = templateContent;
-  } else {
-    // Fallback to existing DOM creation logic
-    contentElement = createDiv();
-
-    // Add title if present
-    if (Title) {
-      const titleH1 = createElement('h1', 'title', Title);
-      contentElement.appendChild(titleH1);
-    }
-
-    // Add main question text (unless it's multiple slider questions where each has its own text)
-    if (!(hasMultipleQuestions && OptionType === SURVEY_CONSTANTS.SLIDER_TYPE)) {
-      const questionH2 = createElement('h2', 'question', Question);
-      contentElement.appendChild(questionH2);
-    }
-
-    // Create options container
-    const optionsDiv = createDiv('options');
-
-    if (OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
-      // For radio buttons, only use the first question (no grouping for radio)
-      const radioOptions = await createRadioOptionsTemplate(ContentId, Options);
-      // Replace the empty optionsDiv with the template result
-      contentElement.appendChild(radioOptions);
-    } else if (OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
-      if (hasMultipleQuestions) {
-        // Create multiple related sliders dynamically
-        const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
-          relatedQuestion.ContentId,
-          relatedQuestion.Options,
-          relatedQuestion.Question,
-        ));
-        const sliders = await Promise.all(sliderPromises);
-        sliders.forEach((slider) => {
-          optionsDiv.appendChild(slider);
-        });
-        contentElement.appendChild(optionsDiv);
-      } else {
-        // Single slider
-        const slider = await createSliderTemplate(ContentId, Options);
-        optionsDiv.appendChild(slider);
-        contentElement.appendChild(optionsDiv);
-      }
-    }
-  }
 
   return createSurveyTemplate(
     progress,
@@ -772,7 +445,7 @@ function formatAnswerFromTemplate(question, selectedAnswer) {
 function groupQuestionsForAnswers(surveyData, surveyAnswers) {
   // First get all questions (both counted and uncounted) to find groups
   const allQuestions = surveyData.filter(
-    (q) => q.ContentType === SURVEY_CONSTANTS.QUESTION_TYPE,
+    (q) => q.ContentType === QUESTION_TYPE,
   );
 
   const groups = [];
@@ -981,36 +654,18 @@ export default function decorate(block) {
 
     // Add the current selection class
     trackWrapper.classList.add(`selected-${selectedIndex}`);
-
-    // Clear error state when user makes a selection
-    trackWrapper.classList.remove('error');
   }
 
   // Radio change handler
   function handleRadioChange(e, questionId) {
     surveyAnswers[questionId] = e.target.value;
-
-    // Clear error state when user makes a selection
-    const optionDiv = e.target.closest('.option');
-    if (optionDiv) {
-      // Clear error from all options in this question group
-      const allOptions = surveyArea.querySelectorAll(
-        `input[name="${questionId}"]`,
-      );
-      allOptions.forEach((option) => {
-        const optDiv = option.closest('.option');
-        if (optDiv) {
-          optDiv.classList.remove('error');
-        }
-      });
-    }
   }
 
   // Highlight invalid controls
   function addErrorState(question) {
     const currentQuestion = surveyData[currentQuestionIndex];
 
-    if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+    if (currentQuestion.OptionType === RADIO_TYPE) {
       // For radio buttons, find all options for this question
       const options = surveyArea.querySelectorAll(
         `input[name="${question.ContentId}"]`,
@@ -1021,7 +676,7 @@ export default function decorate(block) {
           optionDiv.classList.add('error');
         }
       });
-    } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+    } else if (currentQuestion.OptionType === SLIDER_TYPE) {
       // For sliders, find the specific slider track wrapper
       const slider = surveyArea.querySelector(
         `input[name="${question.ContentId}"]`,
@@ -1053,20 +708,17 @@ export default function decorate(block) {
       return isRequired && !hasAnswer;
     });
 
-    if (invalidQuestions.length > 0) {
-      // Clear any existing error states
-      clearErrorStates();
+    // Always clear previous error states first
+    clearErrorStates();
 
+    if (invalidQuestions.length > 0) {
       // Add error visual feedback to invalid questions
       invalidQuestions.forEach((question) => {
         addErrorState(question);
       });
-
       return false;
     }
 
-    // Clear error states if validation passes
-    clearErrorStates();
     return true;
   }
 
@@ -1078,7 +730,7 @@ export default function decorate(block) {
       currentQuestionIndex,
     );
 
-    if (currentQuestion.OptionType === SURVEY_CONSTANTS.SLIDER_TYPE) {
+    if (currentQuestion.OptionType === SLIDER_TYPE) {
       const sliders = surveyArea.querySelectorAll('.slider');
 
       sliders.forEach((slider, index) => {
@@ -1108,7 +760,7 @@ export default function decorate(block) {
           trackWrapper.classList.add(`selected-${defaultIndex}`);
         }
       });
-    } else if (currentQuestion.OptionType === SURVEY_CONSTANTS.RADIO_TYPE) {
+    } else if (currentQuestion.OptionType === RADIO_TYPE) {
       const radioButtons = surveyArea.querySelectorAll(
         `input[name="${currentQuestion.ContentId}"]`,
       );
@@ -1191,8 +843,8 @@ export default function decorate(block) {
       surveyAnswers = {};
       await showQuestion(0);
     } catch (error) {
-      logError('Failed to load survey data:', error);
-      // Error logged to console - no user-facing alert needed for now
+      // eslint-disable-next-line no-console
+      console.error('Failed to load survey data:', error);
     }
   }
 

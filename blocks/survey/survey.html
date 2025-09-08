@@ -4,13 +4,13 @@
 <template data-fly-name="progress">
   <div class="progress">
     <div class="progress-track">
-      <div class="progress-fill" style="width: ${progress}%"></div>
+      <div class="progress-fill" style="--width: ${progress}%; width: var(--width)"></div>
     </div>
     <div class="progress-counter">${questionsCompleted}/${totalActualQuestions}</div>
   </div>
 </template>
 
-<!-- Navigation Template - Phase 2 Step 2 -->
+<!-- Navigation Template -->
 <template data-fly-name="navigation">
   <div class="nav">
     <button class="btn-back" type="button">Back</button>
@@ -18,7 +18,7 @@
   </div>
 </template>
 
-<!-- Fact Content Template - Phase 3 Step 1 -->
+<!-- Fact Content Template -->
 <template data-fly-name="fact-content">
   <div>
     <h1 class="title">${title}</h1>
@@ -26,7 +26,7 @@
   </div>
 </template>
 
-<!-- Radio Options Template - Phase 4 Step 1 -->
+<!-- Radio Options Template -->
 <template data-fly-name="radio-options">
   <div class="options">
     <div class="option" data-fly-repeat.option="options">
@@ -36,7 +36,7 @@
   </div>
 </template>
 
-<!-- Slider Template - Phase 4 Step 2 -->
+<!-- Slider Template -->
 <template data-fly-name="slider">
   <div class="slider-container">
     <h3 class="slider-question" data-fly-test="questionText">${questionText}</h3>
@@ -49,30 +49,7 @@
   </div>
 </template>
 
-<!-- Slider Content Template - Phase 5.5 for handling single or multiple sliders -->
-<template data-fly-name="slider-content">
-  <div class="options">
-    <!-- Single slider case -->
-    <div data-fly-test="isSingleSlider" data-fly-include="slider"></div>
-    
-    <!-- Multiple sliders case -->
-    <div data-fly-test="isMultipleSliders" data-fly-repeat.sliderData="sliders" data-fly-include="slider"></div>
-  </div>
-</template>
-
-<!-- Question Content Template - Phase 5 Step 2 -->
-<template data-fly-name="question-content">
-  <div>
-    <h1 class="title" data-fly-test="title">${title}</h1>
-    <h2 class="question" data-fly-test="questionText">${question}</h2>
-    
-    <!-- Phase 5.5: Conditional content inclusion for radio and slider templates -->
-    <div data-fly-test="isRadioType" data-fly-include="radio-options"></div>
-    <div data-fly-test="isSliderType" data-fly-include="slider-content"></div>
-  </div>
-</template>
-
-<!-- Main Survey Template - Phase 6: Complete survey layout -->
+<!-- Main Survey Template -->
 <template data-fly-name="main">
   <div class="survey-form">
     <!-- Progress section -->
