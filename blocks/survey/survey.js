@@ -62,7 +62,7 @@ function findRelatedQuestions(surveyData, startIndex) {
   return relatedQuestions;
 }
 
-// Small helper to create elements
+// Enhanced element creator - consolidated DOM helpers
 function createElement(tag, className = '', textContent = '', attributes = {}) {
   const element = document.createElement(tag);
   if (className) element.classList.add(...className.split(' '));
@@ -79,27 +79,10 @@ function createElement(tag, className = '', textContent = '', attributes = {}) {
   return element;
 }
 
-// Div helper
-function createDiv(className = '', textContent = '') {
-  return createElement('div', className, textContent);
-}
-
-// Button helper
-function createButton(className, textContent, type = 'button') {
-  return createElement('button', className, textContent, { type });
-}
-
-// Add class if needed
-function addClassIf(element, className, condition = true) {
-  if (element && condition) {
-    element.classList.add(className);
-  }
-}
-
 // Move node to target parent and add class
 function moveNode(node, targetParent, className) {
   if (node) {
-    addClassIf(node, className);
+    node.classList?.add(className);
     if (targetParent && node.parentElement !== targetParent) {
       targetParent.appendChild(node);
     }
@@ -108,17 +91,13 @@ function moveNode(node, targetParent, className) {
 
 // Append children
 function appendChildren(parent, children) {
-  children.forEach((child) => {
-    if (child) parent.appendChild(child);
-  });
+  children.forEach((child) => child && parent.appendChild(child));
   return parent;
 }
 
 // Attach the same listener to multiple elements
 function attachListeners(elements, eventType, handler) {
-  elements.forEach((element) => {
-    if (element) element.addEventListener(eventType, handler);
-  });
+  elements.forEach((element) => element && element.addEventListener(eventType, handler));
 }
 
 // Replace container content safely
@@ -157,27 +136,19 @@ async function fetchSurveyData(surveyHref) {
 
 // Normalize API payload (Options can be CSV)
 function parseSurveyData(surveyResponse) {
-  const questions = surveyResponse.data || [];
-
-  const normalizedQuestions = questions.map((item) => {
-    if (item.Options && typeof item.Options === 'string') {
-      item.Options = item.Options.split(',').map((opt) => opt.trim());
-    }
-    return item;
-  });
-
-  return normalizedQuestions.sort(
-    (a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10),
-  );
+  return (surveyResponse.data || [])
+    .map((item) => {
+      if (item.Options && typeof item.Options === 'string') {
+        item.Options = item.Options.split(',').map((opt) => opt.trim());
+      }
+      return item;
+    })
+    .sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
 }
 
 // Compute progress over counted questions
 function calculateProgress(currentIndex, surveyData) {
-  const actualQuestions = surveyData.filter(
-    (q) => q.CountsAsQuestion === 'TRUE',
-  );
-  const totalActualQuestions = actualQuestions.length;
-
+  const totalActualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE').length;
   const questionsCompleted = surveyData
     .slice(0, currentIndex + 1)
     .filter((q) => q.CountsAsQuestion === 'TRUE').length;
@@ -240,7 +211,7 @@ async function createQuestionContentTemplate(
   relatedQuestions,
 ) {
   // Create main content element
-  const contentElement = createDiv();
+  const contentElement = document.createElement('div');
 
   // Add title and question using DOM creation (templates for these are simple)
   if (title) {
@@ -265,7 +236,7 @@ async function createQuestionContentTemplate(
     contentElement.appendChild(radioOptions);
   } else if (optionType === SLIDER_TYPE) {
     // Create options container
-    const optionsDiv = createDiv('options');
+    const optionsDiv = createElement('div', 'options');
 
     if (hasMultipleQuestions) {
       // Create multiple related sliders using templates
@@ -300,34 +271,19 @@ async function createMainSurveyTemplate(
   icon,
   contentElement,
 ) {
+  const isComplete = progress >= 100;
   return createTemplateContainer('main', {
     progress,
     questionsCompleted,
     totalActualQuestions,
+    isComplete,
     section,
     icon,
     contentElement,
   });
 }
 
-// Build survey template wrapper
-async function createSurveyTemplate(
-  progress,
-  questionsCompleted,
-  totalActualQuestions,
-  section,
-  icon,
-  contentElement,
-) {
-  return createMainSurveyTemplate(
-    progress,
-    questionsCompleted,
-    totalActualQuestions,
-    section,
-    icon,
-    contentElement,
-  );
-}
+// Build survey template wrapper - removed redundant function
 
 // Common props + progress
 function getQuestionContext(questionData, currentIndex, surveyData) {
@@ -355,7 +311,7 @@ async function createFactContent(questionData, currentIndex, surveyData) {
   // Use fact content template function
   const contentElement = await createFactContentTemplate(Title, Question);
 
-  return createSurveyTemplate(
+  return createMainSurveyTemplate(
     progress,
     questionsCompleted,
     totalActualQuestions,
@@ -394,7 +350,7 @@ async function createQuestion(questionData, currentIndex, surveyData) {
     relatedQuestions,
   );
 
-  return createSurveyTemplate(
+  return createMainSurveyTemplate(
     progress,
     questionsCompleted,
     totalActualQuestions,
@@ -508,17 +464,17 @@ function createAnswersListUL(surveyData, surveyAnswers) {
     const firstQuestion = group[0];
     const sectionSpan = createElement('span', '', firstQuestion.Section || '');
 
-    const contentWrap = createDiv('answers-list__content answer-item');
-    const desc = createDiv('answer-item--description');
+    const contentWrap = createElement('div', 'answers-list__content answer-item');
+    const desc = createElement('div', 'answer-item--description');
     const ordinal = createElement('span', '', `Answer ${index + 1}/${total}`);
 
     // Create container for all answers in this group
-    const answersContainer = createDiv();
+    const answersContainer = document.createElement('div');
 
     group.forEach((q) => {
       const answerValue = surveyAnswers[q.ContentId];
       const formattedAnswer = formatAnswerFromTemplate(q, answerValue);
-      const sentenceDiv = createElement('div');
+      const sentenceDiv = document.createElement('div');
 
       // Handle known safe HTML patterns or fallback to text
       if (formattedAnswer.includes('<strong>') && formattedAnswer.includes('</strong>')) {
@@ -548,7 +504,8 @@ function createAnswersListUL(surveyData, surveyAnswers) {
 
     appendChildren(desc, [ordinal, answersContainer]);
 
-    const iconDiv = createDiv(
+    const iconDiv = createElement(
+      'div',
       `slide-${index + 1} answer-item--icon`,
       firstQuestion.Icon || '💡',
     );
@@ -575,11 +532,11 @@ export default function decorate(block) {
 
   // Ensure survey-area wrapper exists
   if (!surveyArea && (logo || content)) {
-    surveyArea = createDiv();
+    surveyArea = document.createElement('div');
     block.prepend(surveyArea);
   }
 
-  addClassIf(surveyArea, 'survey-area');
+  surveyArea?.classList.add('survey-area');
 
   // Promote first picture to background-image
   const bgWrapper = surveyArea?.querySelector(':scope > div:first-child');
@@ -590,7 +547,7 @@ export default function decorate(block) {
     const applyBackgroundAndRemove = () => {
       if (img.currentSrc) {
         surveyArea.style.backgroundImage = `url(${img.currentSrc})`;
-        addClassIf(surveyArea, 'has-background');
+        surveyArea?.classList.add('has-background');
       }
       if (bgWrapper && bgWrapper.parentElement) {
         bgWrapper.parentElement.removeChild(bgWrapper);
@@ -624,7 +581,7 @@ export default function decorate(block) {
   // Swap <p> button container to <div>
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
-    const div = createDiv();
+    const div = document.createElement('div');
     div.className = buttonContainer.className;
     while (buttonContainer.firstChild) {
       div.appendChild(buttonContainer.firstChild);
@@ -692,12 +649,8 @@ export default function decorate(block) {
 
   // Clear all error states
   function clearErrorStates() {
-    const errorElements = surveyArea.querySelectorAll(
-      '.option.error, .slider-track-wrapper.error',
-    );
-    errorElements.forEach((element) => {
-      element.classList.remove('error');
-    });
+    surveyArea.querySelectorAll('.option.error, .slider-track-wrapper.error')
+      .forEach((element) => element.classList.remove('error'));
   }
 
   // Validate current slide (incl. grouped questions)
@@ -713,9 +666,7 @@ export default function decorate(block) {
 
     if (invalidQuestions.length > 0) {
       // Add error visual feedback to invalid questions
-      invalidQuestions.forEach((question) => {
-        addErrorState(question);
-      });
+      invalidQuestions.forEach(addErrorState);
       return false;
     }
 
@@ -765,15 +716,11 @@ export default function decorate(block) {
         `input[name="${currentQuestion.ContentId}"]`,
       );
 
-      attachListeners(radioButtons, 'change', (e) => {
-        handleRadioChange(e, currentQuestion.ContentId);
-      });
+      attachListeners(radioButtons, 'change', (e) => handleRadioChange(e, currentQuestion.ContentId));
 
       // Restore previous answers
       radioButtons.forEach((radio) => {
-        if (surveyAnswers[currentQuestion.ContentId] === radio.value) {
-          radio.checked = true;
-        }
+        radio.checked = (surveyAnswers[currentQuestion.ContentId] === radio.value);
       });
     }
   }
@@ -797,16 +744,10 @@ export default function decorate(block) {
 
   // Bind nav buttons
   function attachNavigationListeners() {
-    const buttons = [
-      { element: surveyArea.querySelector('.btn-back'), direction: 'back' },
-      { element: surveyArea.querySelector('.btn-next'), direction: 'next' },
-    ];
-
-    buttons.forEach(({ element, direction }) => {
-      if (element) {
-        element.addEventListener('click', () => handleNavigation(direction));
-      }
-    });
+    const backBtn = surveyArea.querySelector('.btn-back');
+    const nextBtn = surveyArea.querySelector('.btn-next');
+    if (backBtn) backBtn.addEventListener('click', () => handleNavigation('back'));
+    if (nextBtn) nextBtn.addEventListener('click', () => handleNavigation('next'));
   }
 
   // Render a question slide and bind listeners
@@ -914,25 +855,12 @@ export default function decorate(block) {
       if (nextIndex < surveyData.length) {
         await showQuestion(nextIndex);
       } else {
-        // Done: mark progress UI and show summary
-        const progressDiv = surveyArea.querySelector('.progress');
-        if (progressDiv) {
-          // Check if "Complete!" span doesn't already exist
-          if (!progressDiv.querySelector('.progress-complete')) {
-            const completeSpan = createElement(
-              'span',
-              'progress-complete',
-              'Complete!',
-            );
-            progressDiv.insertBefore(completeSpan, progressDiv.firstChild);
-          }
-        }
-
+        // Done: show summary
         // Swap content for answers summary (UL/LI)
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
           // Create header wrapper with title and subtitle
-          const header = createDiv('answers-list-header');
+          const header = createElement('div', 'answers-list-header');
           const answersHeading = createElement(
             'h1',
             'answers-title',
@@ -956,11 +884,11 @@ export default function decorate(block) {
 
           // Build answers list
           const listEl = createAnswersListUL(surveyData, surveyAnswers);
-          const answersList = createDiv('answers-list');
+          const answersList = createElement('div', 'answers-list');
           if (listEl) answersList.appendChild(listEl);
 
           // Compose and replace content
-          const container = appendChildren(createDiv(), [header, answersList]);
+          const container = appendChildren(document.createElement('div'), [header, answersList]);
           replaceContent(contentDiv, container);
         }
 
@@ -975,7 +903,7 @@ export default function decorate(block) {
           );
 
           // Save answers button
-          const saveButton = createButton('button', 'Save Your Answers');
+          const saveButton = createElement('button', 'button', 'Save Your Answers');
           saveButton.id = 'save-answers';
 
           // Modal builder (lazy create)
@@ -984,30 +912,30 @@ export default function decorate(block) {
             let overlay = document.querySelector('.survey-modal-overlay');
             if (overlay) return overlay;
 
-            overlay = createDiv('survey-modal-overlay hidden');
+            overlay = createElement('div', 'survey-modal-overlay hidden');
             overlay.setAttribute('role', 'presentation');
 
-            const dialog = createDiv('survey-modal');
+            const dialog = createElement('div', 'survey-modal');
             dialog.setAttribute('role', 'dialog');
             dialog.setAttribute('aria-modal', 'true');
             dialog.setAttribute('aria-labelledby', 'survey-modal-title');
             dialog.setAttribute('aria-describedby', 'survey-modal-desc');
 
-            const closeBtn = createButton('survey-modal-close', '×');
+            const closeBtn = createElement('button', 'survey-modal-close', '×');
             closeBtn.setAttribute('aria-label', 'Close');
 
-            const iconWrap = createDiv('survey-modal-icon', '');
+            const iconWrap = createElement('div', 'survey-modal-icon', '');
             // Re‑use one of the icons if available else fallback emoji
             iconWrap.textContent = '💡';
 
             const title = createElement('h2', 'survey-modal-title', 'Thank you for taking the questionnaire!', { id: 'survey-modal-title' });
             const desc = createElement('p', 'survey-modal-desc', 'Select one of the options below—you can have your answers emailed to you or download them right now. Remember to share this with your healthcare provider at your next visit.', { id: 'survey-modal-desc' });
 
-            const actions = createDiv('survey-modal-actions');
-            const emailBtn = createButton('button survey-modal-action primary', 'Email Your Answers ▶');
+            const actions = createElement('div', 'survey-modal-actions');
+            const emailBtn = createElement('button', 'button survey-modal-action primary', 'Email Your Answers ▶');
             emailBtn.type = 'button';
             emailBtn.dataset.action = 'email-answers';
-            const pdfBtn = createButton('button survey-modal-action secondary', 'Save as PDF ↓');
+            const pdfBtn = createElement('button', 'button survey-modal-action secondary', 'Save as PDF ↓');
             pdfBtn.type = 'button';
             pdfBtn.dataset.action = 'download-pdf';
             appendChildren(actions, [emailBtn, pdfBtn]);
@@ -1060,10 +988,13 @@ export default function decorate(block) {
             }
           };
 
-          saveButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            openSaveAnswersModal();
-          });
+          // Attach save button event listener if button exists
+          if (saveButton) {
+            saveButton.addEventListener('click', (e) => {
+              e.preventDefault();
+              openSaveAnswersModal();
+            });
+          }
 
           // Learn more link
           const learnMoreLink = createElement(
@@ -1115,5 +1046,5 @@ export default function decorate(block) {
     attachGetStartedListener();
   }
 
-  addClassIf(footer, 'footer-content');
+  footer?.classList.add('footer-content');
 }

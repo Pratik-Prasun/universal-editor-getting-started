@@ -1,8 +1,9 @@
 <!-- Faintly Templates for Survey Block -->
 
-<!-- Progress Bar Template - Phase 2 Step 1 -->
+<!-- Progress Bar Template - Enhanced with Completion State -->
 <template data-fly-name="progress">
   <div class="progress">
+    <span class="progress-complete" data-fly-test="isComplete">Complete!</span>
     <div class="progress-track">
       <div class="progress-fill" style="--width: ${progress}%; width: var(--width)"></div>
     </div>
