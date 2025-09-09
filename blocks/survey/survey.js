@@ -4,7 +4,7 @@
   Builds DOM nodes (no innerHTML), tracks progress, supports grouped questions.
 */
 
-// Import faintly for template rendering (POC/Learning)
+// Import faintly for template rendering
 import { renderBlock } from '../../scripts/faintly.js';
 
 // Constants used across the survey
@@ -34,10 +34,20 @@ function hasValidAnswer(question, answers) {
   return answers[question.ContentId] != null;
 }
 
+// Extract base ID from question ID (removes letter suffix like 'a', 'b', 'c')
+function getBaseId(contentId) {
+  return contentId.replace(/[a-z]$/, '');
+}
+
+// Check if question is part of a group (has letter suffix)
+function isGroupedQuestion(contentId) {
+  return getBaseId(contentId) !== contentId;
+}
+
 // Find all related questions starting from a given index (q5a, q5b, q5c, etc.)
 function findRelatedQuestions(surveyData, startIndex) {
   const relatedQuestions = [surveyData[startIndex]];
-  const baseId = surveyData[startIndex].ContentId.replace(/[a-z]$/, '');
+  const baseId = getBaseId(surveyData[startIndex].ContentId);
 
   // Only consider it a group if the base ID is different from the original (has letter suffix)
   if (baseId === surveyData[startIndex].ContentId) {
@@ -47,7 +57,7 @@ function findRelatedQuestions(surveyData, startIndex) {
   // Look for subsequent questions with the same base ID
   for (let i = startIndex + 1; i < surveyData.length; i += 1) {
     const currentQuestion = surveyData[i];
-    const currentBaseId = currentQuestion.ContentId.replace(/[a-z]$/, '');
+    const currentBaseId = getBaseId(currentQuestion.ContentId);
 
     if (
       currentBaseId === baseId
@@ -62,7 +72,7 @@ function findRelatedQuestions(surveyData, startIndex) {
   return relatedQuestions;
 }
 
-// Enhanced element creator - consolidated DOM helpers
+// DOM element helper
 function createElement(tag, className = '', textContent = '', attributes = {}) {
   const element = document.createElement(tag);
   if (className) element.classList.add(...className.split(' '));
@@ -94,7 +104,7 @@ function attachListeners(elements, eventType, handler) {
   elements.forEach((element) => element && element.addEventListener(eventType, handler));
 }
 
-// Replace container content safely
+// Replace container content
 function replaceContent(container, newContent) {
   while (container.firstChild) {
     container.removeChild(container.firstChild);
@@ -151,7 +161,7 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
-// Helper function to create template containers (DRY pattern)
+// Create template containers
 async function createTemplateContainer(templateName, templateData) {
   const container = document.createElement('div');
   container.dataset.blockName = 'survey';
@@ -173,7 +183,7 @@ async function createFactContentTemplate(title, question) {
 
 // Create radio options template
 async function createRadioOptionsTemplate(contentId, options) {
-  // Pre-process options to include computed IDs
+  // Add IDs to options
   const processedOptions = options.map((option) => ({
     text: option,
     value: option,
@@ -233,7 +243,7 @@ async function createQuestionContentTemplate(
     const optionsDiv = createElement('div', 'options');
 
     if (hasMultipleQuestions) {
-      // Create multiple related sliders using templates
+      // Multiple sliders for grouped questions
       const sliderPromises = relatedQuestions.map((relatedQuestion) => createSliderTemplate(
         relatedQuestion.ContentId,
         relatedQuestion.Options,
@@ -244,7 +254,7 @@ async function createQuestionContentTemplate(
         optionsDiv.appendChild(slider);
       });
     } else {
-      // Single slider using template
+      // Single slider
       const slider = await createSliderTemplate(contentId, options);
       optionsDiv.appendChild(slider);
     }
@@ -252,28 +262,7 @@ async function createQuestionContentTemplate(
     contentElement.appendChild(optionsDiv);
   }
 
-  // Question content created successfully using templates
   return contentElement;
-}
-
-// Create answer summary header template
-async function createAnswerSummaryHeaderTemplate() {
-  return createTemplateContainer('answer-summary-header', {});
-}
-
-// Create thank you message template
-async function createThankYouMessageTemplate() {
-  return createTemplateContainer('thank-you-message', {});
-}
-
-// Create save button template
-async function createSaveButtonTemplate() {
-  return createTemplateContainer('save-button', {});
-}
-
-// Create learn more template
-async function createLearnMoreTemplate() {
-  return createTemplateContainer('learn-more', {});
 }
 
 // Create summary container template
@@ -281,12 +270,7 @@ async function createSummaryContainerTemplate(header, answersList) {
   return createTemplateContainer('summary-container', { header, answersList });
 }
 
-// Create save modal template
-async function createSaveModalTemplate() {
-  return createTemplateContainer('save-modal', {});
-}
-
-// Build main survey template
+// Create main survey template
 async function createMainSurveyTemplate(
   progress,
   questionsCompleted,
@@ -306,8 +290,6 @@ async function createMainSurveyTemplate(
     contentElement,
   });
 }
-
-// Build survey template wrapper - removed redundant function
 
 // Common props + progress
 function getQuestionContext(questionData, currentIndex, surveyData) {
@@ -433,19 +415,19 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
 
   while (i < allQuestions.length) {
     const currentQuestion = allQuestions[i];
-    const baseId = currentQuestion.ContentId.replace(/[a-z]$/, '');
+    const baseId = getBaseId(currentQuestion.ContentId);
 
     // Check if this is part of a group (has letter suffix)
-    if (baseId !== currentQuestion.ContentId) {
+    if (isGroupedQuestion(currentQuestion.ContentId)) {
       // Find all related questions in the group
       const group = [currentQuestion];
       let j = i + 1;
 
       while (j < allQuestions.length) {
         const nextQuestion = allQuestions[j];
-        const nextBaseId = nextQuestion.ContentId.replace(/[a-z]$/, '');
+        const nextBaseId = getBaseId(nextQuestion.ContentId);
 
-        if (nextBaseId === baseId && nextBaseId !== nextQuestion.ContentId) {
+        if (nextBaseId === baseId && isGroupedQuestion(nextQuestion.ContentId)) {
           group.push(nextQuestion);
           j += 1;
         } else {
@@ -473,7 +455,7 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
   return groups;
 }
 
-// Create answer cards template with processed data
+// Create answer cards template
 async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
   const questionGroups = groupQuestionsForAnswers(surveyData, surveyAnswers);
   const total = questionGroups.length;
@@ -491,7 +473,7 @@ async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
 
       // Handle known safe HTML patterns or fallback to text
       if (formattedAnswer.includes('<strong>') && formattedAnswer.includes('</strong>')) {
-        // Parse simple <strong> tags safely
+        // Parse <strong> tags
         const parts = formattedAnswer.split('<strong>');
         parts.forEach((part, partIndex) => {
           if (partIndex === 0) {
@@ -605,7 +587,7 @@ export default function decorate(block) {
   let surveyAnswers = {};
   let originalContent = '';
 
-  // Input handlers and validation helpers (defined before use)
+  // Input handlers and validation
   // Slider change handler
   function handleSliderInput(e, options, questionId) {
     const selectedIndex = parseInt(e.target.value, 10);
@@ -663,7 +645,7 @@ export default function decorate(block) {
       .forEach((element) => element.classList.remove('error'));
   }
 
-  // Validate current slide (incl. grouped questions)
+  // Validate current slide
   function validateQuestions(relatedQuestions) {
     const invalidQuestions = relatedQuestions.filter((question) => {
       const isRequired = isAnswerRequired(question);
@@ -735,7 +717,7 @@ export default function decorate(block) {
     }
   }
 
-  // Back/Next handler (validate on next)
+  // Navigation handler
   function handleNavigation(direction) {
     if (direction === 'next') {
       const relatedQuestions = findRelatedQuestions(
@@ -811,19 +793,19 @@ export default function decorate(block) {
   function findGroupStart(startIndex) {
     let index = startIndex;
     const targetQuestion = surveyData[index];
-    const targetBaseId = targetQuestion.ContentId.replace(/[a-z]$/, '');
+    const targetBaseId = getBaseId(targetQuestion.ContentId);
 
     // If not a grouped question, return as-is
-    if (targetBaseId === targetQuestion.ContentId) {
+    if (!isGroupedQuestion(targetQuestion.ContentId)) {
       return index;
     }
 
     // Find the first question in the group
     while (index > 0) {
       const prevQ = surveyData[index - 1];
-      const prevBaseId = prevQ.ContentId.replace(/[a-z]$/, '');
+      const prevBaseId = getBaseId(prevQ.ContentId);
 
-      if (prevBaseId === targetBaseId && prevBaseId !== prevQ.ContentId) {
+      if (prevBaseId === targetBaseId && isGroupedQuestion(prevQ.ContentId)) {
         index -= 1;
       } else {
         break;
@@ -848,7 +830,7 @@ export default function decorate(block) {
     // Handle back navigation
     surveyArea.addEventListener('survey:back', async () => {
       if (currentQuestionIndex === 0) {
-        // Go back to original content (trusted content, can use innerHTML)
+        // Go back to original content
         replaceContent(surveyArea);
         surveyArea.innerHTML = originalContent;
         attachGetStartedListener();
@@ -869,13 +851,13 @@ export default function decorate(block) {
         // Swap content for answers summary (UL/LI)
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
-          // Create header using template
-          const header = await createAnswerSummaryHeaderTemplate();
+          // Create header
+          const header = await createTemplateContainer('answer-summary-header', {});
 
-          // Build answers list using template
+          // Build answers list
           const listEl = await createAnswerCardsTemplate(surveyData, surveyAnswers);
 
-          // Create summary container using template
+          // Create summary container
           const container = await createSummaryContainerTemplate(header, listEl);
           replaceContent(contentDiv, container);
         }
@@ -883,20 +865,20 @@ export default function decorate(block) {
         // Show footer after completion: thanks + save + learn more
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
-          // Thank you message using template
-          const thankYouMessage = await createThankYouMessageTemplate();
+          // Thank you message
+          const thankYouMessage = await createTemplateContainer('thank-you-message', {});
 
-          // Save answers button using template
-          const saveButton = await createSaveButtonTemplate();
+          // Save button
+          const saveButton = await createTemplateContainer('save-button', {});
 
-          // Modal builder (lazy create)
+          // Modal setup
           const buildSaveAnswersModal = async () => {
             // Avoid duplicate overlays
             let overlay = document.querySelector('.survey-modal-overlay');
             if (overlay) return overlay;
 
             // Create modal from template
-            overlay = await createSaveModalTemplate();
+            overlay = await createTemplateContainer('save-modal', {});
             document.body.appendChild(overlay);
 
             // Get elements from template
@@ -921,7 +903,7 @@ export default function decorate(block) {
               }
             });
 
-            // Placeholder actions (hook points for integration)
+            // TODO: integrate email and PDF functionality
             emailBtn.addEventListener('click', () => {
               // TODO: integrate email sending
               // eslint-disable-next-line no-console
@@ -956,8 +938,8 @@ export default function decorate(block) {
             });
           }
 
-          // Learn more link using template
-          const learnMoreParagraph = await createLearnMoreTemplate();
+          // Learn more link
+          const learnMoreParagraph = await createTemplateContainer('learn-more', {});
 
           // Insert elements in footer
           const footerContentDiv = footerDiv.querySelector('div');
