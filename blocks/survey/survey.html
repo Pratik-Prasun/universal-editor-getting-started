@@ -50,6 +50,75 @@
   </div>
 </template>
 
+<!-- Answer Card Template -->
+<template data-fly-name="answer-cards">
+  <ul class="answers-list__list">
+    <li class="answers-list__list--item" data-fly-repeat.group="questionGroups">
+      <span>${group.section}</span>
+      <div class="answers-list__content answer-item">
+        <div class="answer-item--description">
+          <span>Answer ${group.answerNumber}/${group.total}</span>
+          <div data-fly-content="group.formattedAnswers"></div>
+        </div>
+        <div class="slide-${group.slideNumber} answer-item--icon">${group.icon}</div>
+      </div>
+    </li>
+  </ul>
+</template>
+
+<!-- Answer Summary Header Template -->
+<template data-fly-name="answer-summary-header">
+  <div class="answers-list-header">
+    <h1 class="answers-title">Your Answers</h1>
+    <p class="answers-subtitle">
+      Be sure to <a class="save-link" href="#save-answers">save your answers below</a> to share with your healthcare provider. Ask your healthcare provider about adding REXULTI to your antidepressant—an open conversation may help get you where you want to be.
+    </p>
+  </div>
+</template>
+
+<!-- Save Modal Template -->
+<template data-fly-name="save-modal">
+  <div class="survey-modal-overlay hidden">
+    <div class="survey-modal">
+      <button class="survey-modal-close">×</button>
+      <div class="survey-modal-icon">💡</div>
+      <h2 class="survey-modal-title">Thank you for taking the questionnaire!</h2>
+      <p class="survey-modal-desc">Select one of the options below—you can have your answers emailed to you or download them right now. Remember to share this with your healthcare provider at your next visit.</p>
+      <div class="survey-modal-actions">
+        <button class="button survey-modal-action primary" type="button" data-action="email-answers">Email Your Answers ▶</button>
+        <button class="button survey-modal-action secondary" type="button" data-action="download-pdf">Save as PDF ↓</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Thank You Message Template -->
+<template data-fly-name="thank-you-message">
+  <p class="survey-thank-you">Thank you for completing this Depression Journey Questionnaire.</p>
+</template>
+
+<!-- Save Button Template -->
+<template data-fly-name="save-button">
+  <button class="button" id="save-answers">Save Your Answers</button>
+</template>
+
+<!-- Learn More Template -->
+<template data-fly-name="learn-more">
+  <p>
+    <a class="survey-learn-more" href="#">Learn more about depression and Partial Response</a>
+  </p>
+</template>
+
+<!-- Summary Container Template -->
+<template data-fly-name="summary-container">
+  <div>
+    <div data-fly-content="header"></div>
+    <div class="answers-list">
+      <div data-fly-content="answersList"></div>
+    </div>
+  </div>
+</template>
+
 <!-- Main Survey Template -->
 <template data-fly-name="main">
   <div class="survey-form">

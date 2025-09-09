@@ -89,12 +89,6 @@ function moveNode(node, targetParent, className) {
   }
 }
 
-// Append children
-function appendChildren(parent, children) {
-  children.forEach((child) => child && parent.appendChild(child));
-  return parent;
-}
-
 // Attach the same listener to multiple elements
 function attachListeners(elements, eventType, handler) {
   elements.forEach((element) => element && element.addEventListener(eventType, handler));
@@ -260,6 +254,36 @@ async function createQuestionContentTemplate(
 
   // Question content created successfully using templates
   return contentElement;
+}
+
+// Create answer summary header template
+async function createAnswerSummaryHeaderTemplate() {
+  return createTemplateContainer('answer-summary-header', {});
+}
+
+// Create thank you message template
+async function createThankYouMessageTemplate() {
+  return createTemplateContainer('thank-you-message', {});
+}
+
+// Create save button template
+async function createSaveButtonTemplate() {
+  return createTemplateContainer('save-button', {});
+}
+
+// Create learn more template
+async function createLearnMoreTemplate() {
+  return createTemplateContainer('learn-more', {});
+}
+
+// Create summary container template
+async function createSummaryContainerTemplate(header, answersList) {
+  return createTemplateContainer('summary-container', { header, answersList });
+}
+
+// Create save modal template
+async function createSaveModalTemplate() {
+  return createTemplateContainer('save-modal', {});
 }
 
 // Build main survey template
@@ -448,29 +472,18 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
 
   return groups;
 }
-// Answers summary (UL/LI)
-function createAnswersListUL(surveyData, surveyAnswers) {
+
+// Create answer cards template with processed data
+async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
   const questionGroups = groupQuestionsForAnswers(surveyData, surveyAnswers);
   const total = questionGroups.length;
 
-  const ul = document.createElement('ul');
-  ul.classList.add('answers-list__list');
-
-  questionGroups.forEach((group, index) => {
-    const li = document.createElement('li');
-    li.classList.add('answers-list__list--item');
-
-    // Use the first question's section for the group
+  // Process groups for template
+  const processedGroups = questionGroups.map((group, index) => {
     const firstQuestion = group[0];
-    const sectionSpan = createElement('span', '', firstQuestion.Section || '');
 
-    const contentWrap = createElement('div', 'answers-list__content answer-item');
-    const desc = createElement('div', 'answer-item--description');
-    const ordinal = createElement('span', '', `Answer ${index + 1}/${total}`);
-
-    // Create container for all answers in this group
+    // Create formatted answers container
     const answersContainer = document.createElement('div');
-
     group.forEach((q) => {
       const answerValue = surveyAnswers[q.ContentId];
       const formattedAnswer = formatAnswerFromTemplate(q, answerValue);
@@ -502,20 +515,17 @@ function createAnswersListUL(surveyData, surveyAnswers) {
       answersContainer.appendChild(sentenceDiv);
     });
 
-    appendChildren(desc, [ordinal, answersContainer]);
-
-    const iconDiv = createElement(
-      'div',
-      `slide-${index + 1} answer-item--icon`,
-      firstQuestion.Icon || '💡',
-    );
-
-    appendChildren(contentWrap, [desc, iconDiv]);
-    appendChildren(li, [sectionSpan, contentWrap]);
-    ul.appendChild(li);
+    return {
+      section: firstQuestion.Section || '',
+      answerNumber: index + 1,
+      total,
+      slideNumber: index + 1,
+      icon: firstQuestion.Icon || '💡',
+      formattedAnswers: answersContainer,
+    };
   });
 
-  return ul;
+  return createTemplateContainer('answer-cards', { questionGroups: processedGroups });
 }
 
 export default function decorate(block) {
@@ -771,7 +781,7 @@ export default function decorate(block) {
     const surveyDataPath = e.target.getAttribute('href');
 
     try {
-      // Store original content
+      // Store original content for restoration
       originalContent = surveyArea.innerHTML;
 
       // Fetch + normalize survey data
@@ -859,90 +869,40 @@ export default function decorate(block) {
         // Swap content for answers summary (UL/LI)
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
-          // Create header wrapper with title and subtitle
-          const header = createElement('div', 'answers-list-header');
-          const answersHeading = createElement(
-            'h1',
-            'answers-title',
-            'Your Answers',
-          );
-          const subtitleText = createElement('p', 'answers-subtitle');
-          subtitleText.appendChild(document.createTextNode('Be sure to '));
-          const saveLinkEl = createElement(
-            'a',
-            'save-link',
-            'save your answers below',
-            { href: '#save-answers' },
-          );
-          subtitleText.appendChild(saveLinkEl);
-          subtitleText.appendChild(
-            document.createTextNode(
-              ' to share with your healthcare provider. Ask your healthcare provider about adding REXULTI to your antidepressant—an open conversation may help get you where you want to be.',
-            ),
-          );
-          appendChildren(header, [answersHeading, subtitleText]);
+          // Create header using template
+          const header = await createAnswerSummaryHeaderTemplate();
 
-          // Build answers list
-          const listEl = createAnswersListUL(surveyData, surveyAnswers);
-          const answersList = createElement('div', 'answers-list');
-          if (listEl) answersList.appendChild(listEl);
+          // Build answers list using template
+          const listEl = await createAnswerCardsTemplate(surveyData, surveyAnswers);
 
-          // Compose and replace content
-          const container = appendChildren(document.createElement('div'), [header, answersList]);
+          // Create summary container using template
+          const container = await createSummaryContainerTemplate(header, listEl);
           replaceContent(contentDiv, container);
         }
 
         // Show footer after completion: thanks + save + learn more
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
-          // Thank you message
-          const thankYouMessage = createElement(
-            'p',
-            'survey-thank-you',
-            'Thank you for completing this Depression Journey Questionnaire.',
-          );
+          // Thank you message using template
+          const thankYouMessage = await createThankYouMessageTemplate();
 
-          // Save answers button
-          const saveButton = createElement('button', 'button', 'Save Your Answers');
-          saveButton.id = 'save-answers';
+          // Save answers button using template
+          const saveButton = await createSaveButtonTemplate();
 
           // Modal builder (lazy create)
-          const buildSaveAnswersModal = () => {
+          const buildSaveAnswersModal = async () => {
             // Avoid duplicate overlays
             let overlay = document.querySelector('.survey-modal-overlay');
             if (overlay) return overlay;
 
-            overlay = createElement('div', 'survey-modal-overlay hidden');
-            overlay.setAttribute('role', 'presentation');
-
-            const dialog = createElement('div', 'survey-modal');
-            dialog.setAttribute('role', 'dialog');
-            dialog.setAttribute('aria-modal', 'true');
-            dialog.setAttribute('aria-labelledby', 'survey-modal-title');
-            dialog.setAttribute('aria-describedby', 'survey-modal-desc');
-
-            const closeBtn = createElement('button', 'survey-modal-close', '×');
-            closeBtn.setAttribute('aria-label', 'Close');
-
-            const iconWrap = createElement('div', 'survey-modal-icon', '');
-            // Re‑use one of the icons if available else fallback emoji
-            iconWrap.textContent = '💡';
-
-            const title = createElement('h2', 'survey-modal-title', 'Thank you for taking the questionnaire!', { id: 'survey-modal-title' });
-            const desc = createElement('p', 'survey-modal-desc', 'Select one of the options below—you can have your answers emailed to you or download them right now. Remember to share this with your healthcare provider at your next visit.', { id: 'survey-modal-desc' });
-
-            const actions = createElement('div', 'survey-modal-actions');
-            const emailBtn = createElement('button', 'button survey-modal-action primary', 'Email Your Answers ▶');
-            emailBtn.type = 'button';
-            emailBtn.dataset.action = 'email-answers';
-            const pdfBtn = createElement('button', 'button survey-modal-action secondary', 'Save as PDF ↓');
-            pdfBtn.type = 'button';
-            pdfBtn.dataset.action = 'download-pdf';
-            appendChildren(actions, [emailBtn, pdfBtn]);
-
-            appendChildren(dialog, [closeBtn, iconWrap, title, desc, actions]);
-            overlay.appendChild(dialog);
+            // Create modal from template
+            overlay = await createSaveModalTemplate();
             document.body.appendChild(overlay);
+
+            // Get elements from template
+            const closeBtn = overlay.querySelector('.survey-modal-close');
+            const emailBtn = overlay.querySelector('[data-action="email-answers"]');
+            const pdfBtn = overlay.querySelector('[data-action="download-pdf"]');
 
             // Focus handling
             function closeModal() {
@@ -978,8 +938,8 @@ export default function decorate(block) {
             return overlay;
           };
 
-          const openSaveAnswersModal = () => {
-            const overlay = buildSaveAnswersModal();
+          const openSaveAnswersModal = async () => {
+            const overlay = await buildSaveAnswersModal();
             if (overlay) {
               overlay.classList.remove('hidden');
               document.body.classList.add('survey-modal-open');
@@ -990,23 +950,14 @@ export default function decorate(block) {
 
           // Attach save button event listener if button exists
           if (saveButton) {
-            saveButton.addEventListener('click', (e) => {
+            saveButton.addEventListener('click', async (e) => {
               e.preventDefault();
-              openSaveAnswersModal();
+              await openSaveAnswersModal();
             });
           }
 
-          // Learn more link
-          const learnMoreLink = createElement(
-            'a',
-            'survey-learn-more',
-            'Learn more about depression and Partial Response',
-            {
-              href: '#',
-            },
-          );
-          const learnMoreParagraph = createElement('p');
-          learnMoreParagraph.appendChild(learnMoreLink);
+          // Learn more link using template
+          const learnMoreParagraph = await createLearnMoreTemplate();
 
           // Insert elements in footer
           const footerContentDiv = footerDiv.querySelector('div');
