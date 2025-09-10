@@ -221,33 +221,20 @@ async function createQuestionContentTemplate(
   options,
   relatedQuestions,
 ) {
-  // Create main content element
-  const contentElement = document.createElement('div');
-
-  // Add title and question using DOM creation (templates for these are simple)
-  if (title) {
-    const titleH1 = createElement('h1', 'title', title);
-    contentElement.appendChild(titleH1);
-  }
-
-  // Add main question text (unless it's multiple slider questions where each has its own text)
+  // Determine if question text should be shown
   const shouldShowQuestionText = !(
     hasMultipleQuestions && optionType === SLIDER_TYPE
   );
 
-  if (shouldShowQuestionText) {
-    const questionH2 = createElement('h2', 'question', question);
-    contentElement.appendChild(questionH2);
-  }
-
-  // Use appropriate template for options content
+  // Create options content based on type
+  let optionsContent;
   if (optionType === RADIO_TYPE) {
     // Use radio options template
-    const radioOptions = await createRadioOptionsTemplate(contentId, options);
-    contentElement.appendChild(radioOptions);
+    optionsContent = await createRadioOptionsTemplate(contentId, options);
   } else if (optionType === SLIDER_TYPE) {
-    // Create options container
-    const optionsDiv = createElement('div', 'options');
+    // Create options container with sliders
+    const optionsDiv = document.createElement('div');
+    optionsDiv.classList.add('options');
 
     if (hasMultipleQuestions) {
       // Multiple sliders for grouped questions
@@ -266,10 +253,16 @@ async function createQuestionContentTemplate(
       optionsDiv.appendChild(slider);
     }
 
-    contentElement.appendChild(optionsDiv);
+    optionsContent = optionsDiv;
   }
 
-  return contentElement;
+  // Use question content template
+  return createTemplateContainer('question-content', {
+    title,
+    question,
+    shouldShowQuestionText,
+    optionsContent,
+  });
 }
 
 // Create summary container template
@@ -468,6 +461,21 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
   }
 
   return groups;
+}
+
+// Create footer container template
+async function createFooterContainerTemplate(
+  authoredContent,
+  thankYouMessage,
+  saveButton,
+  learnMoreParagraph,
+) {
+  return createTemplateContainer('footer-container', {
+    authoredContent,
+    thankYouMessage,
+    saveButton,
+    learnMoreParagraph,
+  });
 }
 
 // Create answer cards template
@@ -899,16 +907,7 @@ export default function decorate(block) {
         // Show footer after completion: thanks + save + learn more
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
-          // Thank you message
-          const thankYouMessage = await createTemplateContainer(
-            'thank-you-message',
-            {},
-          );
-
-          // Save button
-          const saveButton = await createTemplateContainer('save-button', {});
-
-          // Modal setup
+          // Modal setup function
           const buildSaveAnswersModal = async () => {
             // Avoid duplicate overlays
             let overlay = document.querySelector('.survey-modal-overlay');
@@ -920,17 +919,14 @@ export default function decorate(block) {
 
             // Get elements from template
             const closeBtn = overlay.querySelector('.survey-modal-close');
-            const emailBtn = overlay.querySelector(
-              '[data-action="email-answers"]',
-            );
-            const pdfBtn = overlay.querySelector(
-              '[data-action="download-pdf"]',
-            );
+            const emailBtn = overlay.querySelector('[data-action="email-answers"]');
+            const pdfBtn = overlay.querySelector('[data-action="download-pdf"]');
 
             // Focus handling
             function closeModal() {
               overlay.classList.add('hidden');
               document.body.classList.remove('survey-modal-open');
+              const saveButton = document.getElementById('save-answers');
               if (saveButton) saveButton.focus();
             }
 
@@ -971,33 +967,29 @@ export default function decorate(block) {
             }
           };
 
-          // Attach save button event listener if button exists
+          // Capture authored footer content before replacing
+          const footerContentDiv = footerDiv.querySelector('div');
+          const authoredContent = footerContentDiv ? footerContentDiv.cloneNode(true) : document.createElement('div');
+
+          // Create footer using template with all components
+          const footerContainer = await createFooterContainerTemplate(
+            authoredContent,
+            await createTemplateContainer('thank-you-message', {}),
+            await createTemplateContainer('save-button', {}),
+            await createTemplateContainer('learn-more', {}),
+          );
+
+          // Replace footer content with template
+          replaceContent(footerDiv, footerContainer);
+
+          // Attach event listeners after template is rendered
+          const saveButton = footerDiv.querySelector('#save-answers');
           if (saveButton) {
             saveButton.addEventListener('click', async (e) => {
               e.preventDefault();
               await openSaveAnswersModal();
             });
           }
-
-          // Learn more link
-          const learnMoreParagraph = await createTemplateContainer(
-            'learn-more',
-            {},
-          );
-
-          // Insert elements in footer
-          const footerContentDiv = footerDiv.querySelector('div');
-          if (footerContentDiv) {
-            footerContentDiv.insertBefore(
-              thankYouMessage,
-              footerContentDiv.firstChild,
-            );
-            footerContentDiv.appendChild(saveButton);
-            footerContentDiv.appendChild(learnMoreParagraph);
-          }
-
-          // Make footer visible
-          footerDiv.style.display = 'block';
 
           // Scroll to save button from header link
           const saveLink = surveyArea.querySelector('.save-link');

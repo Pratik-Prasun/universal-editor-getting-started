@@ -32,6 +32,15 @@
   </div>
 </template>
 
+<!-- Question Content -->
+<template data-fly-name="question-content">
+  <div>
+    <h1 class="title" data-fly-test="title">${title}</h1>
+    <h2 class="question" data-fly-test="shouldShowQuestionText">${question}</h2>
+    <div data-fly-content="optionsContent"></div>
+  </div>
+</template>
+
 <!-- Radio Options -->
 <template data-fly-name="radio-options">
   <div class="options">
@@ -156,6 +165,16 @@
       >Learn more about depression and Partial Response</a
     >
   </p>
+</template>
+
+<!-- Footer Container -->
+<template data-fly-name="footer-container">
+  <div class="footer-content" style="display: block;">
+    <div data-fly-content="thankYouMessage"></div>
+    <div data-fly-content="authoredContent"></div>
+    <div data-fly-content="saveButton"></div>
+    <div data-fly-content="learnMoreParagraph"></div>
+  </div>
 </template>
 
 <!-- Summary Container -->
