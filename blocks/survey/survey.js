@@ -301,8 +301,8 @@ async function createMainSurveyTemplate(
   section,
   icon,
   contentElement,
+  isComplete = false,
 ) {
-  const isComplete = progress >= 100;
   return createTemplateContainer('main', {
     progress,
     questionsCompleted,
@@ -924,7 +924,25 @@ export default async function decorate(block) {
       if (nextIndex < surveyData.length) {
         await showQuestion(nextIndex);
       } else {
-        // Done: show summary
+        // Done: show summary with completed progress bar
+        const totalActualQuestions = surveyData.filter(
+          (q) => q.CountsAsQuestion === 'TRUE',
+        ).length;
+
+        // Create completion template with progress showing "Complete!"
+        const completionTemplate = await createMainSurveyTemplate(
+          100, // progress at 100%
+          totalActualQuestions, // all questions completed
+          totalActualQuestions,
+          '', // no section text needed
+          '', // no icon needed
+          null, // contentElement will be replaced below
+          true, // isComplete = true to show "Complete!" text
+        );
+
+        // Replace the survey area with completion template
+        replaceContent(surveyArea, completionTemplate);
+
         // Swap content for answers summary (UL/LI)
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
