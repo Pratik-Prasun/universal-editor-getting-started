@@ -1,7 +1,7 @@
 /*
   Survey block for AEM Edge Delivery Services.
   Radios, sliders, and read-only "fact" slides.
-  Builds DOM nodes (no innerHTML), tracks progress, supports grouped questions.
+  Builds DOM nodes, tracks progress, supports grouped questions.
 */
 
 // Import faintly for template rendering
@@ -101,7 +101,9 @@ function moveNode(node, targetParent, className) {
 
 // Attach the same listener to multiple elements
 function attachListeners(elements, eventType, handler) {
-  elements.forEach((element) => element && element.addEventListener(eventType, handler));
+  elements.forEach(
+    (element) => element && element.addEventListener(eventType, handler),
+  );
 }
 
 // Replace container content
@@ -152,7 +154,9 @@ function parseSurveyData(surveyResponse) {
 
 // Compute progress over counted questions
 function calculateProgress(currentIndex, surveyData) {
-  const totalActualQuestions = surveyData.filter((q) => q.CountsAsQuestion === 'TRUE').length;
+  const totalActualQuestions = surveyData.filter(
+    (q) => q.CountsAsQuestion === 'TRUE',
+  ).length;
   const questionsCompleted = surveyData
     .slice(0, currentIndex + 1)
     .filter((q) => q.CountsAsQuestion === 'TRUE').length;
@@ -190,7 +194,10 @@ async function createRadioOptionsTemplate(contentId, options) {
     id: `${contentId}-${option.replace(/\s+/g, '-').toLowerCase()}`,
   }));
 
-  return createTemplateContainer('radio-options', { contentId, options: processedOptions });
+  return createTemplateContainer('radio-options', {
+    contentId,
+    options: processedOptions,
+  });
 }
 
 // Create slider template
@@ -396,7 +403,7 @@ function formatAnswerFromTemplate(question, selectedAnswer) {
 
   // Handle Q6 "yet" suffix
   if (template.includes('{yet_modifier}')) {
-    const yet = (question.ContentId === 'q6' && selectedAnswer === 'No') ? ' yet' : '';
+    const yet = question.ContentId === 'q6' && selectedAnswer === 'No' ? ' yet' : '';
     template = template.replace('{yet_modifier}', yet);
   }
 
@@ -427,7 +434,10 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
         const nextQuestion = allQuestions[j];
         const nextBaseId = getBaseId(nextQuestion.ContentId);
 
-        if (nextBaseId === baseId && isGroupedQuestion(nextQuestion.ContentId)) {
+        if (
+          nextBaseId === baseId
+          && isGroupedQuestion(nextQuestion.ContentId)
+        ) {
           group.push(nextQuestion);
           j += 1;
         } else {
@@ -436,7 +446,9 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
       }
 
       // Only include groups that have at least one counted question and have answers
-      const hasCountedQuestion = group.some((q) => q.CountsAsQuestion === 'TRUE');
+      const hasCountedQuestion = group.some(
+        (q) => q.CountsAsQuestion === 'TRUE',
+      );
       const hasAnswers = group.some((q) => surveyAnswers[q.ContentId] != null);
 
       if (hasCountedQuestion && hasAnswers) {
@@ -445,7 +457,10 @@ function groupQuestionsForAnswers(surveyData, surveyAnswers) {
       i = j; // Skip the grouped questions
     } else {
       // Single question - only include if counted and has answer
-      if (currentQuestion.CountsAsQuestion === 'TRUE' && surveyAnswers[currentQuestion.ContentId] != null) {
+      if (
+        currentQuestion.CountsAsQuestion === 'TRUE'
+        && surveyAnswers[currentQuestion.ContentId] != null
+      ) {
         groups.push([currentQuestion]);
       }
       i += 1;
@@ -472,7 +487,10 @@ async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
       const sentenceDiv = document.createElement('div');
 
       // Handle known safe HTML patterns or fallback to text
-      if (formattedAnswer.includes('<strong>') && formattedAnswer.includes('</strong>')) {
+      if (
+        formattedAnswer.includes('<strong>')
+        && formattedAnswer.includes('</strong>')
+      ) {
         // Parse <strong> tags
         const parts = formattedAnswer.split('<strong>');
         parts.forEach((part, partIndex) => {
@@ -507,7 +525,9 @@ async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
     };
   });
 
-  return createTemplateContainer('answer-cards', { questionGroups: processedGroups });
+  return createTemplateContainer('answer-cards', {
+    questionGroups: processedGroups,
+  });
 }
 
 export default function decorate(block) {
@@ -641,7 +661,8 @@ export default function decorate(block) {
 
   // Clear all error states
   function clearErrorStates() {
-    surveyArea.querySelectorAll('.option.error, .slider-track-wrapper.error')
+    surveyArea
+      .querySelectorAll('.option.error, .slider-track-wrapper.error')
       .forEach((element) => element.classList.remove('error'));
   }
 
@@ -712,7 +733,7 @@ export default function decorate(block) {
 
       // Restore previous answers
       radioButtons.forEach((radio) => {
-        radio.checked = (surveyAnswers[currentQuestion.ContentId] === radio.value);
+        radio.checked = surveyAnswers[currentQuestion.ContentId] === radio.value;
       });
     }
   }
@@ -747,7 +768,11 @@ export default function decorate(block) {
     currentQuestionIndex = index;
     const questionData = surveyData[index];
 
-    const questionElement = await createQuestion(questionData, index, surveyData);
+    const questionElement = await createQuestion(
+      questionData,
+      index,
+      surveyData,
+    );
     // Keep container class
     surveyArea.className = 'survey-area';
     replaceContent(surveyArea, questionElement);
@@ -852,13 +877,22 @@ export default function decorate(block) {
         const contentDiv = surveyArea.querySelector('.content');
         if (contentDiv) {
           // Create header
-          const header = await createTemplateContainer('answer-summary-header', {});
+          const header = await createTemplateContainer(
+            'answer-summary-header',
+            {},
+          );
 
           // Build answers list
-          const listEl = await createAnswerCardsTemplate(surveyData, surveyAnswers);
+          const listEl = await createAnswerCardsTemplate(
+            surveyData,
+            surveyAnswers,
+          );
 
           // Create summary container
-          const container = await createSummaryContainerTemplate(header, listEl);
+          const container = await createSummaryContainerTemplate(
+            header,
+            listEl,
+          );
           replaceContent(contentDiv, container);
         }
 
@@ -866,7 +900,10 @@ export default function decorate(block) {
         const footerDiv = block.querySelector('.footer-content');
         if (footerDiv) {
           // Thank you message
-          const thankYouMessage = await createTemplateContainer('thank-you-message', {});
+          const thankYouMessage = await createTemplateContainer(
+            'thank-you-message',
+            {},
+          );
 
           // Save button
           const saveButton = await createTemplateContainer('save-button', {});
@@ -883,8 +920,12 @@ export default function decorate(block) {
 
             // Get elements from template
             const closeBtn = overlay.querySelector('.survey-modal-close');
-            const emailBtn = overlay.querySelector('[data-action="email-answers"]');
-            const pdfBtn = overlay.querySelector('[data-action="download-pdf"]');
+            const emailBtn = overlay.querySelector(
+              '[data-action="email-answers"]',
+            );
+            const pdfBtn = overlay.querySelector(
+              '[data-action="download-pdf"]',
+            );
 
             // Focus handling
             function closeModal() {
@@ -939,7 +980,10 @@ export default function decorate(block) {
           }
 
           // Learn more link
-          const learnMoreParagraph = await createTemplateContainer('learn-more', {});
+          const learnMoreParagraph = await createTemplateContainer(
+            'learn-more',
+            {},
+          );
 
           // Insert elements in footer
           const footerContentDiv = footerDiv.querySelector('div');
