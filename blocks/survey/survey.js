@@ -205,6 +205,11 @@ async function createButtonContainerTemplate(buttonContent) {
   return createTemplateContainer('button-container', { buttonContent });
 }
 
+// Create survey area wrapper template
+async function createSurveyAreaWrapperTemplate() {
+  return createTemplateContainer('survey-area-wrapper', {});
+}
+
 // Create slider template
 async function createSliderTemplate(contentId, options, questionText = '') {
   return createTemplateContainer('slider', {
@@ -555,13 +560,15 @@ export default async function decorate(block) {
   const content = block.querySelector(':scope > div:nth-child(3)');
   const footer = block.querySelector(':scope > div:last-child');
 
-  // Ensure survey-area wrapper exists
+  // Ensure survey-area wrapper exists using template
   if (!surveyArea && (logo || content)) {
-    surveyArea = document.createElement('div');
-    block.prepend(surveyArea);
+    const surveyAreaWrapper = await createSurveyAreaWrapperTemplate();
+    block.prepend(surveyAreaWrapper);
+    surveyArea = surveyAreaWrapper;
+  } else if (surveyArea) {
+    // Add the class if survey area already exists
+    surveyArea.classList.add('survey-area');
   }
-
-  surveyArea?.classList.add('survey-area');
 
   // Add footer class for later querySelector
   footer?.classList.add('footer-content');
