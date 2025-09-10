@@ -200,6 +200,11 @@ async function createRadioOptionsTemplate(contentId, options) {
   });
 }
 
+// Create button container template
+async function createButtonContainerTemplate(buttonContent) {
+  return createTemplateContainer('button-container', { buttonContent });
+}
+
 // Create slider template
 async function createSliderTemplate(contentId, options, questionText = '') {
   return createTemplateContainer('slider', {
@@ -538,7 +543,7 @@ async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
   });
 }
 
-export default function decorate(block) {
+export default async function decorate(block) {
   if (!block) return;
 
   // Don't decorate twice
@@ -557,6 +562,9 @@ export default function decorate(block) {
   }
 
   surveyArea?.classList.add('survey-area');
+
+  // Add footer class for later querySelector
+  footer?.classList.add('footer-content');
 
   // Promote first picture to background-image
   const bgWrapper = surveyArea?.querySelector(':scope > div:first-child');
@@ -598,15 +606,18 @@ export default function decorate(block) {
   moveNode(logo, surveyArea, 'logo');
   moveNode(content, surveyArea, 'content');
 
-  // Swap <p> button container to <div>
+  // Replace <p> button container with properly structured <div> using template
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
-    const div = document.createElement('div');
-    div.className = buttonContainer.className;
-    while (buttonContainer.firstChild) {
-      div.appendChild(buttonContainer.firstChild);
-    }
-    buttonContainer.parentNode.replaceChild(div, buttonContainer);
+    // Extract the button content
+    const buttonContent = buttonContainer.cloneNode(true);
+    buttonContent.classList.remove('button-container'); // Remove the class since template will add it
+
+    // Create new button container using template
+    const newButtonContainer = await createButtonContainerTemplate(buttonContent);
+
+    // Replace the old container with the new one
+    buttonContainer.parentNode.replaceChild(newButtonContainer, buttonContainer);
   }
 
   // Survey state
@@ -1014,6 +1025,4 @@ export default function decorate(block) {
   if (surveyArea) {
     attachGetStartedListener();
   }
-
-  footer?.classList.add('footer-content');
 }
