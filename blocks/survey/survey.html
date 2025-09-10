@@ -1,6 +1,6 @@
-<!-- Survey templates -->
+<!-- survey templates (faintly) -->
 
-<!-- Progress Bar -->
+<!-- progress indicator -->
 <template data-fly-name="progress">
   <div class="progress">
     <span class="progress-complete" data-fly-test="isComplete">Complete!</span>
@@ -16,7 +16,7 @@
   </div>
 </template>
 
-<!-- Navigation -->
+<!-- back / next controls -->
 <template data-fly-name="navigation">
   <div class="nav">
     <button class="btn-back" type="button">Back</button>
@@ -24,7 +24,7 @@
   </div>
 </template>
 
-<!-- Fact Content -->
+<!-- read-only fact slide -->
 <template data-fly-name="fact-content">
   <div>
     <h1 class="title">${title}</h1>
@@ -32,7 +32,7 @@
   </div>
 </template>
 
-<!-- Question Content -->
+<!-- interactive question layout -->
 <template data-fly-name="question-content">
   <div>
     <h1 class="title" data-fly-test="title">${title}</h1>
@@ -41,7 +41,7 @@
   </div>
 </template>
 
-<!-- Radio Options -->
+<!-- radio options (with generated ids) -->
 <template data-fly-name="radio-options">
   <div class="options">
     <div class="option" data-fly-repeat.option="options">
@@ -56,7 +56,7 @@
   </div>
 </template>
 
-<!-- Slider -->
+<!-- slider input + labels -->
 <template data-fly-name="slider">
   <div class="slider-container">
     <h3 class="slider-question" data-fly-test="questionText">
@@ -80,7 +80,7 @@
   </div>
 </template>
 
-<!-- Answer Cards -->
+<!-- answer cards (completion) -->
 <template data-fly-name="answer-cards">
   <ul class="answers-list__list">
     <li class="answers-list__list--item" data-fly-repeat.group="questionGroups">
@@ -98,7 +98,7 @@
   </ul>
 </template>
 
-<!-- Answer Summary Header -->
+<!-- summary header (save CTA) -->
 <template data-fly-name="answer-summary-header">
   <div class="answers-list-header">
     <h1 class="answers-title">Your Answers</h1>
@@ -112,7 +112,7 @@
   </div>
 </template>
 
-<!-- Save Modal -->
+<!-- save / export modal -->
 <template data-fly-name="save-modal">
   <div class="survey-modal-overlay hidden">
     <div class="survey-modal">
@@ -146,19 +146,19 @@
   </div>
 </template>
 
-<!-- Thank You Message -->
+<!-- thank-you message -->
 <template data-fly-name="thank-you-message">
   <p class="survey-thank-you">
     Thank you for completing this Depression Journey Questionnaire.
   </p>
 </template>
 
-<!-- Save Button -->
+<!-- save button -->
 <template data-fly-name="save-button">
   <button class="button" id="save-answers">Save Your Answers</button>
 </template>
 
-<!-- Learn More -->
+<!-- learn more link -->
 <template data-fly-name="learn-more">
   <p>
     <a class="survey-learn-more" href="#"
@@ -167,7 +167,9 @@
   </p>
 </template>
 
-<!-- Footer Container -->
+<!-- layout containers -->
+
+<!-- footer wrapper -->
 <template data-fly-name="footer-container">
   <div class="footer-content" style="display: block;">
     <div data-fly-content="thankYouMessage"></div>
@@ -177,7 +179,7 @@
   </div>
 </template>
 
-<!-- Summary Container -->
+<!-- summary container -->
 <template data-fly-name="summary-container">
   <div>
     <div data-fly-content="header"></div>
@@ -187,7 +189,7 @@
   </div>
 </template>
 
-<!-- Main Survey -->
+<!-- main survey layout (progress + content + nav) -->
 <template data-fly-name="main">
   <div class="survey-form">
     <!-- Progress section -->
@@ -207,14 +209,22 @@
   </div>
 </template>
 
-<!-- Button Container -->
+<!-- button wrapper -->
 <template data-fly-name="button-container">
   <div class="button-container">
     <div data-fly-content="buttonContent"></div>
   </div>
 </template>
 
-<!-- Survey Area Wrapper -->
+<!-- survey area wrapper -->
 <template data-fly-name="survey-area-wrapper">
   <div class="survey-area"></div>
+</template>
+
+<!-- intro/hero layout (logo + content) -->
+<template data-fly-name="survey-intro">
+  <div class="survey-area" data-fly-attributes="backgroundAttributes">
+    <div class="logo" data-fly-content="logoContent" data-fly-test="hasLogo"></div>
+    <div class="content" data-fly-content="contentElements" data-fly-test="hasContent"></div>
+  </div>
 </template>

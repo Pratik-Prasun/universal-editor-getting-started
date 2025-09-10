@@ -1,13 +1,14 @@
-/*
-  Survey block for AEM Edge Delivery Services.
-  Radios, sliders, and read-only "fact" slides.
-  Builds DOM nodes, tracks progress, supports grouped questions.
-*/
+/**
+ * survey block
+ * - multi-step flow (radio, slider, fact)
+ * - uses faintly templates for rendering
+ * - supports grouped questions and progress tracking
+ */
 
-// Import faintly for template rendering
+// render templates (faintly)
 import { renderBlock } from '../../scripts/faintly.js';
 
-// Constants used across the survey
+// types & flags
 const SURVEY_CONSTANTS = {
   MANDATORY_TRUE: 'TRUE',
   QUESTION_TYPE: 'question',
@@ -16,12 +17,12 @@ const SURVEY_CONSTANTS = {
   RADIO_TYPE: 'radio',
 };
 
-// Destructure for cleaner access
+// unpack constants
 const {
   MANDATORY_TRUE, QUESTION_TYPE, FACT_TYPE, SLIDER_TYPE, RADIO_TYPE,
 } = SURVEY_CONSTANTS;
 
-// Required only if mandatory and it's an actual question (facts don't count)
+// does this question need an answer? (facts are informational)
 function isAnswerRequired(question) {
   return (
     question.Mandatory === MANDATORY_TRUE
@@ -29,32 +30,32 @@ function isAnswerRequired(question) {
   );
 }
 
-// Null/undefined means unanswered; empty string may be valid for some types
+// is answered? (null/undefined => unanswered)
 function hasValidAnswer(question, answers) {
   return answers[question.ContentId] != null;
 }
 
-// Extract base ID from question ID (removes letter suffix like 'a', 'b', 'c')
+// base id (strip trailing letter: q5a -> q5)
 function getBaseId(contentId) {
   return contentId.replace(/[a-z]$/, '');
 }
 
-// Check if question is part of a group (has letter suffix)
+// grouped? (q5a style)
 function isGroupedQuestion(contentId) {
   return getBaseId(contentId) !== contentId;
 }
 
-// Find all related questions starting from a given index (q5a, q5b, q5c, etc.)
+// collect group members starting at index
 function findRelatedQuestions(surveyData, startIndex) {
   const relatedQuestions = [surveyData[startIndex]];
   const baseId = getBaseId(surveyData[startIndex].ContentId);
 
-  // Only consider it a group if the base ID is different from the original (has letter suffix)
+  // Single question if no grouping
   if (baseId === surveyData[startIndex].ContentId) {
-    return relatedQuestions; // Single question, no related ones
+    return relatedQuestions;
   }
 
-  // Look for subsequent questions with the same base ID
+  // Find consecutive questions with same base ID
   for (let i = startIndex + 1; i < surveyData.length; i += 1) {
     const currentQuestion = surveyData[i];
     const currentBaseId = getBaseId(currentQuestion.ContentId);
@@ -65,14 +66,14 @@ function findRelatedQuestions(surveyData, startIndex) {
     ) {
       relatedQuestions.push(currentQuestion);
     } else {
-      break; // Stop when we find a question that doesn't belong to this group
+      break; // Group ended
     }
   }
 
   return relatedQuestions;
 }
 
-// DOM element helper
+// DOM helpers
 function createElement(tag, className = '', textContent = '', attributes = {}) {
   const element = document.createElement(tag);
   if (className) element.classList.add(...className.split(' '));
@@ -89,24 +90,14 @@ function createElement(tag, className = '', textContent = '', attributes = {}) {
   return element;
 }
 
-// Move node to target parent and add class
-function moveNode(node, targetParent, className) {
-  if (node) {
-    node.classList?.add(className);
-    if (targetParent && node.parentElement !== targetParent) {
-      targetParent.appendChild(node);
-    }
-  }
-}
-
-// Attach the same listener to multiple elements
+// attach listeners helper
 function attachListeners(elements, eventType, handler) {
   elements.forEach(
     (element) => element && element.addEventListener(eventType, handler),
   );
 }
 
-// Replace container content
+// replace content helper
 function replaceContent(container, newContent) {
   while (container.firstChild) {
     container.removeChild(container.firstChild);
@@ -119,7 +110,7 @@ function replaceContent(container, newContent) {
   }
 }
 
-// Fetch survey JSON; supports pretty hrefs via /paths.json
+// fetch survey JSON (supports pretty paths via /paths.json)
 async function fetchSurveyData(surveyHref) {
   let mapping = surveyHref;
   if (!surveyHref.endsWith('json')) {
@@ -140,7 +131,7 @@ async function fetchSurveyData(surveyHref) {
   return json;
 }
 
-// Normalize API payload (Options can be CSV)
+// normalize survey payload (Options can be CSV)
 function parseSurveyData(surveyResponse) {
   return (surveyResponse.data || [])
     .map((item) => {
@@ -152,7 +143,7 @@ function parseSurveyData(surveyResponse) {
     .sort((a, b) => parseInt(a.Order, 10) - parseInt(b.Order, 10));
 }
 
-// Compute progress over counted questions
+// progress calc (based on CountsAsQuestion)
 function calculateProgress(currentIndex, surveyData) {
   const totalActualQuestions = surveyData.filter(
     (q) => q.CountsAsQuestion === 'TRUE',
@@ -165,7 +156,7 @@ function calculateProgress(currentIndex, surveyData) {
   return { progress, questionsCompleted, totalActualQuestions };
 }
 
-// Create template containers
+// template helper (faintly)
 async function createTemplateContainer(templateName, templateData) {
   const container = document.createElement('div');
   container.dataset.blockName = 'survey';
@@ -180,14 +171,16 @@ async function createTemplateContainer(templateName, templateData) {
   return container.firstElementChild;
 }
 
-// Create fact content template
+// Template builders for different UI components
+
+// Fact slide content (non-interactive)
 async function createFactContentTemplate(title, question) {
   return createTemplateContainer('fact-content', { title, question });
 }
 
-// Create radio options template
+// Radio button group with auto-generated IDs
 async function createRadioOptionsTemplate(contentId, options) {
-  // Add IDs to options
+  // Generate unique IDs for accessibility
   const processedOptions = options.map((option) => ({
     text: option,
     value: option,
@@ -200,14 +193,34 @@ async function createRadioOptionsTemplate(contentId, options) {
   });
 }
 
-// Create button container template
+// Button wrapper (fixes semantic HTML issues)
 async function createButtonContainerTemplate(buttonContent) {
   return createTemplateContainer('button-container', { buttonContent });
 }
 
-// Create survey area wrapper template
+// Survey area container
 async function createSurveyAreaWrapperTemplate() {
   return createTemplateContainer('survey-area-wrapper', {});
+}
+
+// Main intro section with background image support
+async function createSurveyIntroTemplate(
+  logoContent,
+  contentElements,
+  hasBackground,
+  backgroundImageUrl,
+) {
+  const backgroundAttributes = hasBackground
+    ? { style: `background-image: url("${backgroundImageUrl}")`, class: 'survey-area has-background' }
+    : { class: 'survey-area' };
+
+  return createTemplateContainer('survey-intro', {
+    logoContent,
+    contentElements,
+    hasLogo: !!logoContent,
+    hasContent: !!contentElements,
+    backgroundAttributes,
+  });
 }
 
 // Create slider template
@@ -548,10 +561,14 @@ async function createAnswerCardsTemplate(surveyData, surveyAnswers) {
   });
 }
 
+/**
+ * Main block decorator - sets up survey structure and templates
+ * Handles DOM restructuring and initializes survey functionality
+ */
 export default async function decorate(block) {
   if (!block) return;
 
-  // Don't decorate twice
+  // Prevent duplicate decoration
   if (block.dataset.decorated === '1') return;
   block.dataset.decorated = '1';
 
@@ -560,98 +577,108 @@ export default async function decorate(block) {
   const content = block.querySelector(':scope > div:nth-child(3)');
   const footer = block.querySelector(':scope > div:last-child');
 
-  // Ensure survey-area wrapper exists using template
+  // Create survey area container if missing
   if (!surveyArea && (logo || content)) {
     const surveyAreaWrapper = await createSurveyAreaWrapperTemplate();
     block.prepend(surveyAreaWrapper);
     surveyArea = surveyAreaWrapper;
   } else if (surveyArea) {
-    // Add the class if survey area already exists
+    // Add class for existing elements
     surveyArea.classList.add('survey-area');
   }
 
-  // Add footer class for later querySelector
+  // Tag footer for later queries
   footer?.classList.add('footer-content');
 
-  // Promote first picture to background-image
+  // Background image detection and setup
   const bgWrapper = surveyArea?.querySelector(':scope > div:first-child');
   const pic = bgWrapper?.querySelector('picture');
   const img = pic?.querySelector('img');
 
-  if (pic && img && surveyArea) {
-    const applyBackgroundAndRemove = () => {
-      if (img.currentSrc) {
-        surveyArea.style.backgroundImage = `url(${img.currentSrc})`;
-        surveyArea?.classList.add('has-background');
-      }
-      if (bgWrapper && bgWrapper.parentElement) {
-        bgWrapper.parentElement.removeChild(bgWrapper);
-      } else if (pic.parentElement) {
-        pic.parentElement.removeChild(pic);
-      }
-    };
+  // Check if we have a background image to work with
+  const backgroundImageUrl = img?.currentSrc || img?.src;
+  const hasBackgroundImage = !!(pic && img && backgroundImageUrl);
 
-    if (img.currentSrc) {
-      img
-        .decode()
-        .then(applyBackgroundAndRemove)
-        .catch(applyBackgroundAndRemove);
-    } else {
+  // Restructure intro section using templates
+  if (surveyArea && (logo || content)) {
+    // Clone elements before templating
+    const logoClone = logo?.cloneNode(true);
+    const contentClone = content?.cloneNode(true);
+
+    // Build templated intro layout
+    const surveyIntroLayout = await createSurveyIntroTemplate(
+      logoClone,
+      contentClone,
+      hasBackgroundImage,
+      backgroundImageUrl,
+    );
+
+    // Replace with template and clean up originals
+    block.replaceChild(surveyIntroLayout, surveyArea);
+    surveyArea = surveyIntroLayout; // Update reference
+
+    // Remove original elements (now in template)
+    logo?.remove();
+    content?.remove();
+
+    // Handle async image loading for background
+    if (pic && img && !img.currentSrc) {
       img.addEventListener(
         'load',
         () => {
-          img
-            .decode()
-            .then(applyBackgroundAndRemove)
-            .catch(applyBackgroundAndRemove);
+          if (img.currentSrc) {
+            surveyArea.style.backgroundImage = `url("${img.currentSrc}")`;
+            surveyArea.classList.add('has-background');
+          }
         },
         { once: true },
       );
     }
+  } else if (surveyArea) {
+    // Just add class if no templating needed
+    surveyArea.classList.add('survey-area');
   }
 
-  moveNode(logo, surveyArea, 'logo');
-  moveNode(content, surveyArea, 'content');
-
-  // Replace <p> button container with properly structured <div> using template
+  // Fix button container HTML structure
   const buttonContainer = block.querySelector('p.button-container');
   if (buttonContainer) {
-    // Extract the button content
+    // Extract button content
     const buttonContent = buttonContainer.cloneNode(true);
-    buttonContent.classList.remove('button-container'); // Remove the class since template will add it
+    buttonContent.classList.remove('button-container'); // Template will add this back
 
-    // Create new button container using template
+    // Replace with proper div structure
     const newButtonContainer = await createButtonContainerTemplate(buttonContent);
 
-    // Replace the old container with the new one
+    // Swap old for new
     buttonContainer.parentNode.replaceChild(newButtonContainer, buttonContainer);
   }
 
-  // Survey state
+  // Survey runtime state
   let surveyData = [];
   let currentQuestionIndex = 0;
   let surveyAnswers = {};
   let originalContent = '';
 
-  // Input handlers and validation
-  // Slider change handler
+  // Event handlers for user input
+
+  // Slider input handler - updates answer and visual state
   function handleSliderInput(e, options, questionId) {
     const selectedIndex = parseInt(e.target.value, 10);
     surveyAnswers[questionId] = options[selectedIndex];
 
-    // Update selected-* classes
+    // Update CSS classes for visual feedback
     const trackWrapper = e.target.parentElement;
 
-    // Remove all previous selection classes
+    // Clear previous selection
     for (let i = 0; i < options.length; i += 1) {
       trackWrapper.classList.remove(`selected-${i}`);
     }
 
-    // Add the current selection class
+    // Show current selection
     trackWrapper.classList.add(`selected-${selectedIndex}`);
   }
 
-  // Radio change handler
+  // Radio button handler
   function handleRadioChange(e, questionId) {
     surveyAnswers[questionId] = e.target.value;
   }
@@ -807,22 +834,21 @@ export default async function decorate(block) {
     attachInputListeners();
   }
 
-  // Start survey on click
+  // Get Started button click handler
   async function handleGetStartedClick(e) {
     e.preventDefault();
 
     const surveyDataPath = e.target.getAttribute('href');
 
     try {
-      // Store original content for restoration
+      // Save original content for back navigation
       originalContent = surveyArea.innerHTML;
 
-      // Fetch + normalize survey data
+      // Load and parse survey JSON
       const data = await fetchSurveyData(surveyDataPath);
-      // Normalize/parse data shape
       surveyData = parseSurveyData(data);
 
-      // Start survey
+      // Initialize survey state and show first question
       currentQuestionIndex = 0;
       surveyAnswers = {};
       await showQuestion(0);
@@ -832,7 +858,7 @@ export default async function decorate(block) {
     }
   }
 
-  // Wire up the Get Started button
+  // Attach click handler to Get Started button
   function attachGetStartedListener() {
     const getStartedButton = surveyArea.querySelector(
       '.button-container .button',
