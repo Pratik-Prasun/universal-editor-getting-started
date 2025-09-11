@@ -1,0 +1,230 @@
+<!-- survey templates (faintly) -->
+
+<!-- progress indicator -->
+<template data-fly-name="progress">
+  <div class="progress">
+    <span class="progress-complete" data-fly-test="isComplete">Complete!</span>
+    <div class="progress-track">
+      <div
+        class="progress-fill"
+        style="--width: ${progress}%; width: var(--width)"
+      ></div>
+    </div>
+    <div class="progress-counter">
+      ${questionsCompleted}/${totalActualQuestions}
+    </div>
+  </div>
+</template>
+
+<!-- back / next controls -->
+<template data-fly-name="navigation">
+  <div class="nav">
+    <button class="btn-back" type="button">Back</button>
+    <button class="btn-next" type="button">Next</button>
+  </div>
+</template>
+
+<!-- read-only fact slide -->
+<template data-fly-name="fact-content">
+  <div>
+    <h1 class="title">${title}</h1>
+    <p class="fact-content">${question}</p>
+  </div>
+</template>
+
+<!-- interactive question layout -->
+<template data-fly-name="question-content">
+  <div>
+    <h1 class="title" data-fly-test="title">${title}</h1>
+    <h2 class="question" data-fly-test="shouldShowQuestionText">${question}</h2>
+    <div data-fly-content="optionsContent"></div>
+  </div>
+</template>
+
+<!-- radio options (with generated ids) -->
+<template data-fly-name="radio-options">
+  <div class="options">
+    <div class="option" data-fly-repeat.option="options">
+      <input
+        type="radio"
+        id="${option.id}"
+        name="${contentId}"
+        value="${option.value}"
+      />
+      <label for="${option.id}">${option.text}</label>
+    </div>
+  </div>
+</template>
+
+<!-- slider input + labels -->
+<template data-fly-name="slider">
+  <div class="slider-container">
+    <h3 class="slider-question" data-fly-test="questionText">
+      ${questionText}
+    </h3>
+    <div class="slider-track-wrapper">
+      <div class="slider-labels">
+        <span data-fly-repeat.option="options">${option}</span>
+      </div>
+      <input
+        class="slider"
+        type="range"
+        id="${contentId}"
+        name="${contentId}"
+        min="0"
+        max="${optionsLength}"
+        value="0"
+        data-options="${optionsJson}"
+      />
+    </div>
+  </div>
+</template>
+
+<!-- answer cards (completion) -->
+<template data-fly-name="answer-cards">
+  <ul class="answers-list__list">
+    <li class="answers-list__list--item" data-fly-repeat.group="questionGroups">
+      <span>${group.section}</span>
+      <div class="answers-list__content answer-item">
+        <div class="answer-item--description">
+          <span>Answer ${group.answerNumber}/${group.total}</span>
+          <div data-fly-content="group.formattedAnswers"></div>
+        </div>
+        <div class="slide-${group.slideNumber} answer-item--icon">
+          ${group.icon}
+        </div>
+      </div>
+    </li>
+  </ul>
+</template>
+
+<!-- summary header (save CTA) -->
+<template data-fly-name="answer-summary-header">
+  <div class="answers-list-header">
+    <h1 class="answers-title">Your Answers</h1>
+    <p class="answers-subtitle">
+      Be sure to
+      <a class="save-link" href="#save-answers">save your answers below</a> to
+      share with your healthcare provider. Ask your healthcare provider about
+      adding REXULTI to your antidepressant—an open conversation may help get
+      you where you want to be.
+    </p>
+  </div>
+</template>
+
+<!-- save / export modal -->
+<template data-fly-name="save-modal">
+  <div class="survey-modal-overlay hidden">
+    <div class="survey-modal">
+      <button class="survey-modal-close">×</button>
+      <div class="survey-modal-icon">💡</div>
+      <h2 class="survey-modal-title">
+        Thank you for taking the questionnaire!
+      </h2>
+      <p class="survey-modal-desc">
+        Select one of the options below—you can have your answers emailed to you
+        or download them right now. Remember to share this with your healthcare
+        provider at your next visit.
+      </p>
+      <div class="survey-modal-actions">
+        <button
+          class="button survey-modal-action primary"
+          type="button"
+          data-action="email-answers"
+        >
+          Email Your Answers ▶
+        </button>
+        <button
+          class="button survey-modal-action secondary"
+          type="button"
+          data-action="download-pdf"
+        >
+          Save as PDF ↓
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- thank-you message -->
+<template data-fly-name="thank-you-message">
+  <p class="survey-thank-you">
+    Thank you for completing this Depression Journey Questionnaire.
+  </p>
+</template>
+
+<!-- save button -->
+<template data-fly-name="save-button">
+  <button class="button" id="save-answers">Save Your Answers</button>
+</template>
+
+<!-- learn more link -->
+<template data-fly-name="learn-more">
+  <p>
+    <a class="survey-learn-more" href="#"
+      >Learn more about depression and Partial Response</a
+    >
+  </p>
+</template>
+
+<!-- layout containers -->
+
+<!-- footer wrapper -->
+<template data-fly-name="footer-container">
+  <div class="footer-content" style="display: block;">
+    <div data-fly-content="thankYouMessage"></div>
+    <div data-fly-content="authoredContent"></div>
+    <div data-fly-content="saveButton"></div>
+    <div data-fly-content="learnMoreParagraph"></div>
+  </div>
+</template>
+
+<!-- summary container -->
+<template data-fly-name="summary-container">
+  <div>
+    <div data-fly-content="header"></div>
+    <div class="answers-list">
+      <div data-fly-content="answersList"></div>
+    </div>
+  </div>
+</template>
+
+<!-- main survey layout (progress + content + nav) -->
+<template data-fly-name="main">
+  <div class="survey-form">
+    <!-- Progress section -->
+    <div data-fly-include="progress"></div>
+
+    <!-- Content section -->
+    <div class="content">
+      <span class="section-title">${section}</span>
+      <div class="question-icon">${icon}</div>
+
+      <!-- Content area -->
+      <div data-fly-content="contentElement"></div>
+
+      <!-- Navigation section -->
+      <div data-fly-include="navigation"></div>
+    </div>
+  </div>
+</template>
+
+<!-- button wrapper -->
+<template data-fly-name="button-container">
+  <div class="button-container">
+    <div data-fly-content="buttonContent"></div>
+  </div>
+</template>
+
+<!-- survey area wrapper -->
+<template data-fly-name="survey-area-wrapper">
+  <div class="survey-area"></div>
+</template>
+
+<!-- intro/hero layout (logo + content) -->
+<template data-fly-name="survey-intro">
+  <div class="survey-area" data-fly-attributes="backgroundAttributes">
+    <div class="logo" data-fly-content="logoContent" data-fly-test="hasLogo"></div>
+    <div class="content" data-fly-content="contentElements" data-fly-test="hasContent"></div>
+  </div>
+</template>
